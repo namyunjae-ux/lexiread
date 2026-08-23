@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: lexiread-app
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: JWT_SECRET
+        generateValue: true

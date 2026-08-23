@@ -1,0 +1,16 @@
+[
+  {
+    "id": "usr_1787477281983",
+    "username": "TestLearner",
+    "email": "learner@example.com",
+    "passwordHash": "$2b$10$sf7/uojbBPqi2YScWoXuD.sdzdpPxd2LiP623ccgsBIJGR4u/G.p.",
+    "createdAt": "2026-08-23T09:28:01.983Z"
+  },
+  {
+    "id": "usr_1787478472434",
+    "username": "Alex",
+    "email": "nyjnam774@gmail.com",
+    "passwordHash": "$2b$10$tGiPKLCGbFbPV9BiLdsmN.ZLp/82IL/Byhla/pXByB.Nnvlkqlul2",
+    "createdAt": "2026-08-23T09:47:52.434Z"
+  }
+]
