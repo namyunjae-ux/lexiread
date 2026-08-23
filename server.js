@@ -170,14 +170,27 @@ async function scrapeGuardianOpinionArticles(count = 5, seenUrls = new Set()) {
   return articles;
 }
 
+// Calculate the furthest ahead local date currently on Earth (UTC+14)
+function getGlobalMaxLocalDate() {
+  const d = new Date(Date.now() + 14 * 3600 * 1000);
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function getTodayLocalDate() {
+  return getGlobalMaxLocalDate();
+}
+
 const SERVICE_START_DATE = '2026-08-23';
 
 function sanitizeArchives() {
   const archives = loadJSON(ARCHIVES_FILE, {});
-  const today = getTodayLocalDate();
+  const maxAllowed = getGlobalMaxLocalDate();
   let modified = false;
   for (const dateKey of Object.keys(archives)) {
-    if (dateKey < SERVICE_START_DATE || dateKey > today) {
+    if (dateKey < SERVICE_START_DATE || dateKey > maxAllowed) {
       delete archives[dateKey];
       modified = true;
     }
@@ -200,9 +213,9 @@ async function getOrCreateArticlesForDate(dateStr) {
     return archives[dateStr];
   }
 
-  const today = getTodayLocalDate();
-  // STRICT RULE 2: Future dates cannot be fetched before that day arrives
-  if (dateStr > today) {
+  const maxAllowed = getGlobalMaxLocalDate();
+  // STRICT RULE 2: Future dates beyond today anywhere on Earth cannot be fetched
+  if (dateStr > maxAllowed) {
     return [];
   }
 
@@ -227,21 +240,33 @@ async function getOrCreateArticlesForDate(dateStr) {
   return articles;
 }
 
-// Check every 30 minutes to auto-prefetch when date rolls over at midnight
+// Check every 10 minutes to auto-prefetch when date rolls over
 setInterval(async () => {
   try {
     const today = getTodayLocalDate();
     if (today >= SERVICE_START_DATE) {
       const archives = sanitizeArchives();
       if (!archives[today] || archives[today].length === 0) {
-        console.log(`[Scheduler] Midnight rollover detected! Pre-fetching for ${today}...`);
+        console.log(`[Scheduler] New date detected! Pre-fetching for ${today}...`);
         await getOrCreateArticlesForDate(today);
       }
     }
   } catch (e) {
     console.error('[Scheduler Error]:', e.message);
   }
-}, 30 * 60 * 1000);
+}, 10 * 60 * 1000);
+
+// Auto-prefetch on startup
+(async () => {
+  try {
+    const today = getTodayLocalDate();
+    if (today >= SERVICE_START_DATE) {
+      await getOrCreateArticlesForDate(today);
+    }
+  } catch (e) {
+    console.error('Initial prefetch error:', e.message);
+  }
+})();
 
 // ----------------------------------------------------
 // REST APIS: ARTICLES & ARCHIVES
