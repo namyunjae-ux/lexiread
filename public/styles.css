@@ -736,6 +736,154 @@ body {
   color: var(--text-muted);
 }
 
+/* WORDBOOK & NOTE TAKING */
+.wordbook-card {
+  max-width: 680px;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.wordbook-title-group h2 {
+  font-size: 19px;
+  color: var(--text-headline);
+}
+
+.modal-subtitle {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.add-vocab-form {
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 14px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vocab-form-row {
+  display: flex;
+  gap: 10px;
+}
+
+.input-field {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-main);
+  font-size: 13px;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--accent-color);
+}
+
+.vocab-word-input {
+  max-width: 200px;
+  font-weight: 600;
+}
+
+.wordbook-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.wordbook-count-text {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.input-search {
+  padding: 6px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--bg-app);
+  color: var(--text-main);
+  font-size: 12.5px;
+  width: 220px;
+}
+
+.wordbook-list {
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 380px;
+  padding-right: 4px;
+}
+
+.vocab-item-card {
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  transition: all var(--transition-fast);
+}
+
+.vocab-item-card:hover {
+  border-color: var(--accent-color);
+  transform: translateX(2px);
+}
+
+.vocab-word-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-headline);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-speak-word {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.vocab-meaning {
+  font-size: 13px;
+  color: var(--text-main);
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+.vocab-example {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+  margin-top: 4px;
+  padding-left: 8px;
+  border-left: 2px solid var(--accent-color);
+}
+
+.btn-del-vocab {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+}
+
+.btn-del-vocab:hover {
+  color: #ef4444;
+}
+
 /* AUTH FORM */
 .auth-tabs {
   display: flex;
