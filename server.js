@@ -170,21 +170,43 @@ async function scrapeGuardianOpinionArticles(count = 5, seenUrls = new Set()) {
   return articles;
 }
 
+const SERVICE_START_DATE = '2026-08-23';
+
+function sanitizeArchives() {
+  const archives = loadJSON(ARCHIVES_FILE, {});
+  const today = getTodayLocalDate();
+  let modified = false;
+  for (const dateKey of Object.keys(archives)) {
+    if (dateKey < SERVICE_START_DATE || dateKey > today) {
+      delete archives[dateKey];
+      modified = true;
+    }
+  }
+  if (modified) saveJSON(ARCHIVES_FILE, archives);
+  return archives;
+}
+
 // ----------------------------------------------------
 // ARCHIVES & MIDNIGHT PRE-FETCH LOGIC
 // ----------------------------------------------------
 async function getOrCreateArticlesForDate(dateStr) {
-  const archives = loadJSON(ARCHIVES_FILE, {});
+  // STRICT RULE 1: Before service start date (2026-08-23), no columns exist
+  if (!dateStr || dateStr < SERVICE_START_DATE) {
+    return [];
+  }
+
+  const archives = sanitizeArchives();
   if (archives[dateStr] && archives[dateStr].length > 0) {
     return archives[dateStr];
   }
 
   const today = getTodayLocalDate();
-  if (dateStr !== today && archives[dateStr]) {
-    return archives[dateStr];
+  // STRICT RULE 2: Future dates cannot be fetched before that day arrives
+  if (dateStr > today) {
+    return [];
   }
 
-  // Fetch new articles for today
+  // Fetch new articles for today (or valid date on/after launch)
   console.log(`[Auto-Prefetch] Fetching 5 fresh columns for ${dateStr}...`);
   const seenHistory = loadJSON(SEEN_HISTORY_FILE, []);
   const seenUrls = new Set(seenHistory.map(item => item.url));
@@ -209,10 +231,12 @@ async function getOrCreateArticlesForDate(dateStr) {
 setInterval(async () => {
   try {
     const today = getTodayLocalDate();
-    const archives = loadJSON(ARCHIVES_FILE, {});
-    if (!archives[today] || archives[today].length === 0) {
-      console.log(`[Scheduler] Midnight rollover detected! Pre-fetching for ${today}...`);
-      await getOrCreateArticlesForDate(today);
+    if (today >= SERVICE_START_DATE) {
+      const archives = sanitizeArchives();
+      if (!archives[today] || archives[today].length === 0) {
+        console.log(`[Scheduler] Midnight rollover detected! Pre-fetching for ${today}...`);
+        await getOrCreateArticlesForDate(today);
+      }
     }
   } catch (e) {
     console.error('[Scheduler Error]:', e.message);
@@ -223,13 +247,15 @@ setInterval(async () => {
 // REST APIS: ARTICLES & ARCHIVES
 // ----------------------------------------------------
 app.get('/api/articles/dates', (req, res) => {
-  const archives = loadJSON(ARCHIVES_FILE, {});
+  const archives = sanitizeArchives();
   const today = getTodayLocalDate();
-  const datesSet = new Set(Object.keys(archives));
-  datesSet.add(today);
+  const validDates = Object.keys(archives).filter(d => d >= SERVICE_START_DATE && d <= today);
+  if (!validDates.includes(today) && today >= SERVICE_START_DATE) {
+    validDates.push(today);
+  }
 
-  const sortedDates = Array.from(datesSet).sort().reverse();
-  res.json({ dates: sortedDates, today });
+  const sortedDates = validDates.sort().reverse();
+  res.json({ dates: sortedDates, today, startDate: SERVICE_START_DATE });
 });
 
 app.get('/api/articles/today', async (req, res) => {

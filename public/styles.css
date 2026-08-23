@@ -643,6 +643,19 @@ body {
   font-weight: 800;
 }
 
+.cal-day-cell.disabled-day,
+.cal-day-cell.future-day {
+  opacity: 0.35;
+  cursor: not-allowed;
+  background: transparent;
+}
+
+.cal-day-cell.disabled-day:hover,
+.cal-day-cell.future-day:hover {
+  transform: none;
+  border-color: var(--border-color);
+}
+
 .cal-day-cell.partially-read {
   background: var(--accent-light);
   color: var(--accent-color);
