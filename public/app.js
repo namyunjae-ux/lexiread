@@ -27,6 +27,7 @@ const canvasStandfirst = document.getElementById('canvas-standfirst');
 const canvasBody = document.getElementById('canvas-body');
 const markReadBtn = document.getElementById('mark-read-btn');
 const markReadCheckbox = document.getElementById('mark-read-checkbox');
+const markReadText = document.getElementById('mark-read-text');
 const dailyProgressFill = document.getElementById('daily-progress-fill');
 const dailyProgressText = document.getElementById('daily-progress-text');
 const authSection = document.getElementById('auth-section');
@@ -158,7 +159,6 @@ function setupEventListeners() {
 
   // Calendar Modal triggers
   if (openCalendarBtn) openCalendarBtn.addEventListener('click', openCalendarModal);
-  if (streakIndicator) streakIndicator.addEventListener('click', openCalendarModal);
   if (closeCalendarBtn) closeCalendarBtn.addEventListener('click', () => calendarModal.style.display = 'none');
   
   if (calPrevMonthBtn) {
@@ -448,7 +448,6 @@ async function toggleArticleReadStatus(articleId) {
       if (resp.ok) {
         const data = await resp.json();
         state.streak.streakDays = data.streakDays;
-        if (streakDaysEl) streakDaysEl.textContent = data.streakDays;
       }
     } catch (e) {
       console.warn('Background streak sync failed:', e);
@@ -490,7 +489,6 @@ function calculateLocalStreak(hist) {
   }
 
   state.streak.streakDays = streak;
-  if (streakDaysEl) streakDaysEl.textContent = streak;
 }
 
 // ----------------------------------------------------
@@ -577,7 +575,6 @@ async function loadUserStreak() {
     const resp = await apiRequest('/api/user/streak');
     const data = await resp.json();
     state.streak = data;
-    if (streakDaysEl) streakDaysEl.textContent = data.streakDays || 0;
     renderSidebarArticles();
   } catch (err) {
     console.error('Failed to load streak:', err);
@@ -714,7 +711,6 @@ function logoutUser() {
   state.user = null;
   state.streak = { streakDays: 0, todayArticles: [], fullHistory: {} };
   localStorage.removeItem('lexiread_token');
-  if (streakDaysEl) streakDaysEl.textContent = '0';
   renderAuthSection();
   renderSidebarArticles();
   showToast('You have been logged out.');
