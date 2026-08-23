@@ -703,7 +703,7 @@ function renderWordbookList(filter = '') {
   if (filtered.length === 0) {
     wordbookListContainer.innerHTML = `
       <div style="text-align:center; padding:35px 20px; color:var(--text-muted); font-size:13px;">
-        ${filter ? 'No matching words found.' : 'Your wordbook is empty.<br>Look up words in Cambridge Dictionary and add them here to study!'}
+        ${filter ? 'No matching words found.' : 'Your wordbook is empty.<br>Save vocabulary and personal notes here to study!'}
       </div>
     `;
     return;
