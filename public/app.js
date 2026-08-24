@@ -51,6 +51,7 @@ const typingSpeakBtn = document.getElementById('typing-speak-btn');
 const typingActiveBox = document.getElementById('typing-active-box');
 const typingTargetDisplay = document.getElementById('typing-target-display');
 const typingInputField = document.getElementById('typing-input-field');
+const typingPrevBtn = document.getElementById('typing-prev-btn');
 const typingSkipBtn = document.getElementById('typing-skip-btn');
 
 // CALENDAR ELEMENTS
@@ -197,6 +198,7 @@ function setupEventListeners() {
       }
     });
   }
+  if (typingPrevBtn) typingPrevBtn.addEventListener('click', goToPreviousSentence);
   if (typingSkipBtn) typingSkipBtn.addEventListener('click', advanceToNextSentence);
   if (typingSpeakBtn) typingSpeakBtn.addEventListener('click', speakCurrentTypingSentence);
 
@@ -612,6 +614,11 @@ function renderCurrentTypingSentence() {
   if (typingTargetDisplay) {
     typingTargetDisplay.textContent = targetSentence;
   }
+
+  // Update Previous button disabled state
+  if (typingPrevBtn) {
+    typingPrevBtn.disabled = (currIdx === 0);
+  }
 }
 
 function handleSentenceEnterAdvance(e) {
@@ -619,6 +626,17 @@ function handleSentenceEnterAdvance(e) {
   const inputVal = typingInputField ? typingInputField.value.trim() : '';
   if (inputVal.length > 0) {
     advanceToNextSentence();
+  }
+}
+
+function goToPreviousSentence() {
+  if (state.typing.currentIndex > 0) {
+    state.typing.currentIndex -= 1;
+    if (typingInputField) {
+      typingInputField.value = '';
+    }
+    renderCurrentTypingSentence();
+    if (typingInputField) typingInputField.focus();
   }
 }
 

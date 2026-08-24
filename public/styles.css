@@ -1401,11 +1401,17 @@ body {
   box-shadow: 0 0 0 3px var(--accent-light);
 }
 
-.btn-skip-sentence {
+.typing-nav-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-nav-sentence {
   background: var(--bg-app);
   border: 1px solid var(--border-color);
-  color: var(--text-muted);
-  padding: 14px 18px;
+  color: var(--text-main);
+  padding: 14px 16px;
   border-radius: 8px;
   font-size: 13.5px;
   font-weight: 600;
@@ -1414,9 +1420,14 @@ body {
   white-space: nowrap;
 }
 
-.btn-skip-sentence:hover {
+.btn-nav-sentence:hover:not(:disabled) {
   border-color: var(--accent-color);
-  color: var(--text-headline);
+  color: var(--accent-color);
+}
+
+.btn-nav-sentence:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 .typing-hint-text {
@@ -1566,8 +1577,14 @@ body {
     padding: 12px 14px;
   }
 
-  .btn-skip-sentence {
+  .typing-nav-buttons {
+    display: flex;
     width: 100%;
+    gap: 8px;
+  }
+
+  .btn-nav-sentence {
+    flex: 1;
     padding: 10px;
     text-align: center;
     justify-content: center;
