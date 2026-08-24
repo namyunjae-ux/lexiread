@@ -337,82 +337,6 @@ app.get('/api/articles/:date', async (req, res) => {
 // ----------------------------------------------------
 // REST APIS: ENGLISH-ENGLISH DICTIONARY PROXY
 // ----------------------------------------------------
-const DICT_CACHE = {};
-
-app.get('/api/dictionary/:word', async (req, res) => {
-  const word = req.params.word.trim().toLowerCase().replace(/[^a-z'-]/g, '');
-  if (!word || word.length < 2) {
-    return res.status(400).json({ error: 'Invalid word' });
-  }
-
-  if (DICT_CACHE[word]) {
-    return res.json(DICT_CACHE[word]);
-  }
-
-  try {
-    const dictResp = await axios.get(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-      timeout: 6000
-    });
-
-    if (dictResp.data && dictResp.data.length > 0) {
-      const data = dictResp.data[0];
-      let phonetic = data.phonetic || (data.phonetics && data.phonetics.find(p => p.text)?.text) || '';
-      let audioUrl = (data.phonetics && data.phonetics.find(p => p.audio && p.audio.length > 0)?.audio) || '';
-
-      const meanings = (data.meanings || []).map(m => ({
-        partOfSpeech: m.partOfSpeech,
-        definitions: (m.definitions || []).slice(0, 3).map(d => ({
-          definition: d.definition,
-          example: d.example || null,
-          synonyms: (d.synonyms || []).slice(0, 4)
-        }))
-      }));
-
-      const result = {
-        word: data.word,
-        phonetic,
-        audioUrl,
-        meanings: meanings.slice(0, 4)
-      };
-
-      DICT_CACHE[word] = result;
-      return res.json(result);
-    }
-  } catch (err) {
-    // Fallback to Wiktionary
-    try {
-      const wikResp = await axios.get(`https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(word)}`, {
-        headers: { 'User-Agent': 'LexiRead/1.0' },
-        timeout: 4000
-      });
-      if (wikResp.data && wikResp.data.en && wikResp.data.en.length > 0) {
-        const meanings = wikResp.data.en.map(item => ({
-          partOfSpeech: item.partOfSpeech,
-          definitions: (item.definitions || []).slice(0, 2).map(d => ({
-            definition: d.definition.replace(/<[^>]+>/g, ''),
-            example: null,
-            synonyms: []
-          }))
-        }));
-        const result = {
-          word,
-          phonetic: '',
-          audioUrl: '',
-          meanings
-        };
-        DICT_CACHE[word] = result;
-        return res.json(result);
-      }
-    } catch (e2) {}
-  }
-
-  res.status(404).json({
-    error: `Definition for "${word}" not found in standard dictionary.`,
-    word
-  });
-});
-
 // ----------------------------------------------------
 // REST APIS: AUTH
 // ----------------------------------------------------
@@ -470,55 +394,6 @@ app.post('/api/auth/login', (req, res) => {
 
 app.get('/api/auth/me', authMiddleware, (req, res) => {
   res.json({ user: req.user });
-});
-
-// ----------------------------------------------------
-// REST APIS: WORDBOOK
-// ----------------------------------------------------
-app.get('/api/user/vocab', authMiddleware, (req, res) => {
-  const allVocab = loadJSON(VOCAB_FILE, {});
-  const userVocab = allVocab[req.user.id] || [];
-  res.json({ vocab: userVocab });
-});
-
-app.post('/api/user/vocab', authMiddleware, (req, res) => {
-  const { word, phonetic, partOfSpeech, definition, example, articleTitle } = req.body;
-  if (!word || !definition) {
-    return res.status(400).json({ error: 'Word and definition required' });
-  }
-
-  const allVocab = loadJSON(VOCAB_FILE, {});
-  if (!allVocab[req.user.id]) allVocab[req.user.id] = [];
-
-  const existingIdx = allVocab[req.user.id].findIndex(v => v.word.toLowerCase() === word.toLowerCase());
-  const newEntry = {
-    id: 'voc_' + Date.now(),
-    word: word.trim(),
-    phonetic: phonetic || '',
-    partOfSpeech: partOfSpeech || '',
-    definition: definition || '',
-    example: example || '',
-    articleTitle: articleTitle || '',
-    savedAt: new Date().toISOString()
-  };
-
-  if (existingIdx >= 0) {
-    allVocab[req.user.id][existingIdx] = newEntry;
-  } else {
-    allVocab[req.user.id].unshift(newEntry);
-  }
-
-  saveJSON(VOCAB_FILE, allVocab);
-  res.json({ success: true, entry: newEntry });
-});
-
-app.delete('/api/user/vocab/:id', authMiddleware, (req, res) => {
-  const allVocab = loadJSON(VOCAB_FILE, {});
-  if (!allVocab[req.user.id]) return res.json({ success: true });
-
-  allVocab[req.user.id] = allVocab[req.user.id].filter(v => v.id !== req.params.id && v.word !== req.params.id);
-  saveJSON(VOCAB_FILE, allVocab);
-  res.json({ success: true });
 });
 
 // ----------------------------------------------------

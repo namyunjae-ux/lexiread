@@ -31,10 +31,9 @@
         <span>📅 Calendar</span>
       </button>
 
-      <!-- Wordbook & Notes Button -->
-      <button class="btn btn-outline" id="open-wordbook-btn" title="Open My Wordbook & Study Notes">
-        <span>📝 Wordbook</span>
-        <span class="badge" id="vocab-count-badge">0</span>
+      <!-- Memo Button -->
+      <button class="btn btn-outline" id="open-memo-btn" title="Open Notepad & Memos">
+        <span>📝 Memo</span>
       </button>
 
       <!-- Theme Switcher (Light & Dark) -->
@@ -80,12 +79,6 @@
       <!-- Reader Toolbar -->
       <div class="reader-toolbar" id="reader-toolbar">
         <div class="toolbar-left">
-          <!-- In-App Instant Dictionary Button -->
-          <button class="btn btn-outline btn-sm" id="open-dict-modal-btn" title="Look up any word in English Dictionary">
-            <span class="dict-icon">🔍</span>
-            <span class="dict-label">Dictionary</span>
-          </button>
-
           <!-- Mode Switcher: Read Mode vs Type Mode -->
           <div class="mode-toggle-group">
             <button class="mode-toggle-btn active" id="mode-read-btn" title="Normal Reading Mode">
@@ -192,38 +185,15 @@
     </div>
   </div>
 
-  <!-- WORDBOOK & NOTE-TAKING MODAL -->
-  <div class="modal-overlay" id="wordbook-modal" style="display: none;">
-    <div class="modal-card wordbook-card">
+  <!-- SIMPLE MEMO / NOTEPAD MODAL -->
+  <div class="modal-overlay" id="memo-modal" style="display: none;">
+    <div class="modal-card memo-card">
       <div class="modal-header">
-        <div class="wordbook-title-group">
-          <h2>📝 My Wordbook & Study Notes</h2>
-          <span class="modal-subtitle">Save words, definitions, and personal notes while reading</span>
-        </div>
-        <button class="modal-close-btn" id="close-wordbook-btn">&times;</button>
+        <h2>📝 Memo</h2>
+        <button class="modal-close-btn" id="close-memo-btn">&times;</button>
       </div>
-
-      <!-- Add New Word / Note Form -->
-      <form class="add-vocab-form" id="add-vocab-form">
-        <div class="vocab-form-row">
-          <input type="text" id="new-vocab-word" required placeholder="Word or phrase (e.g. palpable)" class="input-field vocab-word-input">
-          <input type="text" id="new-vocab-meaning" required placeholder="Meaning / Definition (e.g. easily perceptible)" class="input-field vocab-mean-input">
-        </div>
-        <div class="vocab-form-row">
-          <input type="text" id="new-vocab-example" placeholder="Example sentence or context note (optional)" class="input-field vocab-ex-input">
-          <button type="submit" class="btn btn-primary" id="save-vocab-btn">+ Add Word</button>
-        </div>
-      </form>
-
-      <!-- Wordbook List Header with Search -->
-      <div class="wordbook-toolbar">
-        <span class="wordbook-count-text" id="wordbook-total-count">0 saved words</span>
-        <input type="text" id="wordbook-search" class="input-search" placeholder="Search your words & notes...">
-      </div>
-
-      <!-- List of saved words -->
-      <div class="wordbook-list" id="wordbook-list-container">
-        <!-- Injected by app.js -->
+      <div class="memo-body">
+        <textarea id="memo-textarea" class="memo-textarea" placeholder="칼럼을 읽으며 자유롭게 메모를 작성하세요 (자동 저장됩니다)..."></textarea>
       </div>
     </div>
   </div>
@@ -272,50 +242,6 @@
         <div class="auth-error" id="reg-error"></div>
         <button type="submit" class="btn btn-primary btn-block">Create Free Account</button>
       </form>
-    </div>
-  </div>
-
-  <!-- IN-APP INSTANT ENGLISH DICTIONARY MODAL -->
-  <div class="modal-overlay" id="dictionary-modal" style="display: none;">
-    <div class="modal-card dict-modal-card">
-      <div class="modal-header">
-        <div class="dict-modal-title-group">
-          <h2>🔍 Instant English Dictionary</h2>
-          <span class="modal-subtitle">Search definitions, phonetics, examples & save directly to wordbook</span>
-        </div>
-        <button class="modal-close-btn" id="close-dict-btn">&times;</button>
-      </div>
-
-      <!-- Dictionary Search Form -->
-      <form class="dict-search-form" id="dict-search-form">
-        <input type="text" id="dict-search-input" class="input-field dict-search-input" placeholder="Type an English word (e.g. profound, ephemeral, thrive)..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required>
-        <button type="submit" class="btn btn-primary" id="dict-search-submit">Search</button>
-      </form>
-
-      <!-- Dictionary Results Area -->
-      <div class="dict-result-view" id="dict-result-view">
-        <div class="dict-empty-state">
-          <span class="dict-empty-icon">📖</span>
-          <p>Type any English word above or double-click words in the article for instant in-app definitions.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- FLOATING QUICK DICT POPOVER (ON TEXT SELECTION / DOUBLE CLICK) -->
-  <div class="dict-quick-popover" id="dict-quick-popover" style="display: none;">
-    <div class="popover-header">
-      <span class="popover-word" id="popover-word">Word</span>
-      <span class="popover-phonetic" id="popover-phonetic"></span>
-      <button class="popover-speak-btn" id="popover-speak-btn" title="Listen">🔊</button>
-      <button class="popover-close-btn" id="popover-close-btn">&times;</button>
-    </div>
-    <div class="popover-body" id="popover-body">
-      <div class="popover-loading">Looking up...</div>
-    </div>
-    <div class="popover-footer">
-      <button class="popover-add-btn" id="popover-add-btn">+ Save to Wordbook</button>
-      <button class="popover-full-btn" id="popover-full-btn">Full Dictionary 🔍</button>
     </div>
   </div>
 

@@ -777,378 +777,40 @@ body {
   color: var(--text-muted);
 }
 
-.add-vocab-form {
-  background: var(--bg-app);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
+/* SIMPLE MEMO & NOTEPAD MODAL */
+.memo-card {
+  max-width: 640px;
+  width: 92%;
+  height: 72vh;
+  max-height: 580px;
+  display: flex;
+  flex-direction: column;
+}
+
+.memo-body {
+  flex: 1;
+  display: flex;
+  margin-top: 8px;
+}
+
+.memo-textarea {
+  width: 100%;
+  height: 100%;
   padding: 14px;
-  margin-bottom: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.vocab-form-row {
-  display: flex;
-  gap: 10px;
-}
-
-.input-field {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--bg-card);
-  color: var(--text-main);
-  font-size: 13px;
-}
-
-.input-field:focus {
-  outline: none;
-  border-color: var(--accent-color);
-}
-
-.vocab-word-input {
-  max-width: 200px;
-  font-weight: 600;
-}
-
-.wordbook-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.wordbook-count-text {
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-.input-search {
-  padding: 6px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 6px;
-  background: var(--bg-app);
-  color: var(--text-main);
-  font-size: 12.5px;
-  width: 220px;
-}
-
-.wordbook-list {
-  overflow-y: auto;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  max-height: 380px;
-  padding-right: 4px;
-}
-
-.vocab-item-card {
-  background: var(--bg-app);
   border: 1px solid var(--border-color);
   border-radius: 8px;
-  padding: 12px 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  transition: all var(--transition-fast);
-}
-
-.vocab-item-card:hover {
-  border-color: var(--accent-color);
-  transform: translateX(2px);
-}
-
-.vocab-word-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-headline);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.btn-speak-word {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 13px;
-}
-
-.vocab-meaning {
-  font-size: 13px;
-  color: var(--text-main);
-  margin-top: 3px;
-  font-weight: 500;
-}
-
-.vocab-example {
-  font-size: 12px;
-  color: var(--text-muted);
-  font-style: italic;
-  margin-top: 4px;
-  padding-left: 8px;
-  border-left: 2px solid var(--accent-color);
-}
-
-.btn-del-vocab {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 16px;
-  padding: 4px;
-}
-
-.btn-del-vocab:hover {
-  color: #ef4444;
-}
-
-/* IN-APP INSTANT DICTIONARY */
-.dict-modal-card {
-  max-width: 580px;
-  width: 92%;
-  max-height: 85vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.dict-search-form {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-.dict-search-input {
-  flex: 1;
-  font-size: 14.5px;
-  padding: 10px 14px;
-}
-
-.dict-result-view {
-  overflow-y: auto;
-  flex: 1;
-  max-height: 440px;
-  padding-right: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.dict-empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--text-muted);
-}
-
-.dict-empty-icon {
-  font-size: 40px;
-  display: block;
-  margin-bottom: 10px;
-}
-
-.dict-word-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
   background: var(--bg-app);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 14px 18px;
-}
-
-.dict-word-main {
-  font-family: var(--font-display);
-  font-size: 24px;
-  font-weight: 800;
-  color: var(--text-headline);
-  display: inline-flex;
-  align-items: baseline;
-  gap: 10px;
-}
-
-.dict-phonetic-badge {
-  font-family: var(--font-sans);
+  color: var(--text-main);
   font-size: 14px;
-  font-weight: 500;
-  color: var(--accent-color);
+  line-height: 1.6;
+  resize: none;
+  box-sizing: border-box;
+  font-family: inherit;
 }
 
-.dict-audio-btn {
-  background: var(--accent-light);
-  border: 1px solid var(--accent-color);
-  color: var(--accent-color);
-  font-size: 14px;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 600;
-  transition: all var(--transition-fast);
-}
-
-.dict-audio-btn:hover {
-  background: var(--accent-color);
-  color: #ffffff;
-}
-
-.dict-meaning-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  padding: 16px 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.dict-pos-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.dict-pos-pill {
-  font-size: 11px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  background: var(--accent-light);
-  color: var(--accent-color);
-  padding: 2px 8px;
-  border-radius: 4px;
-}
-
-.dict-def-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-left: 8px;
-  border-left: 2.5px solid var(--border-color);
-}
-
-.dict-def-text {
-  font-size: 13.5px;
-  color: var(--text-main);
-  line-height: 1.5;
-}
-
-.dict-def-example {
-  font-size: 12.5px;
-  color: var(--text-muted);
-  font-style: italic;
-  margin-top: 2px;
-}
-
-.dict-save-to-wordbook-btn {
-  background: var(--bg-app);
-  border: 1px solid var(--border-color);
-  color: var(--accent-color);
-  font-size: 11.5px;
-  font-weight: 700;
-  padding: 4px 10px;
-  border-radius: 5px;
-  cursor: pointer;
-  align-self: flex-start;
-  margin-top: 4px;
-  transition: all var(--transition-fast);
-}
-
-.dict-save-to-wordbook-btn:hover {
-  background: var(--accent-color);
-  color: #ffffff;
+.memo-textarea:focus {
+  outline: none;
   border-color: var(--accent-color);
-}
-
-/* FLOATING QUICK DICT POPOVER */
-.dict-quick-popover {
-  position: absolute;
-  z-index: 2500;
-  width: 290px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  box-shadow: var(--shadow-lg);
-  padding: 12px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  animation: fadeIn 0.15s ease-out;
-}
-
-.popover-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-bottom: 1px solid var(--border-color);
-  padding-bottom: 6px;
-}
-
-.popover-word {
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 800;
-  color: var(--text-headline);
-}
-
-.popover-phonetic {
-  font-size: 12px;
-  color: var(--accent-color);
-  margin-left: 6px;
-  flex: 1;
-}
-
-.popover-speak-btn,
-.popover-close-btn {
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  font-size: 13px;
-  color: var(--text-muted);
-  padding: 2px 4px;
-}
-
-.popover-body {
-  font-size: 12.5px;
-  color: var(--text-main);
-  line-height: 1.45;
-  max-height: 110px;
-  overflow-y: auto;
-}
-
-.popover-footer {
-  display: flex;
-  gap: 6px;
-  margin-top: 4px;
-  border-top: 1px solid var(--border-color);
-  padding-top: 8px;
-}
-
-.popover-add-btn {
-  flex: 1;
-  background: var(--accent-color);
-  color: #ffffff;
-  border: none;
-  border-radius: 5px;
-  font-size: 11.5px;
-  font-weight: 600;
-  padding: 6px 8px;
-  cursor: pointer;
-}
-
-.popover-full-btn {
-  background: var(--bg-app);
-  border: 1px solid var(--border-color);
-  color: var(--text-main);
-  border-radius: 5px;
-  font-size: 11.5px;
-  padding: 6px 8px;
-  cursor: pointer;
 }
 
 /* AUTH FORM */
@@ -1645,61 +1307,8 @@ body {
     box-sizing: border-box;
   }
 
-  /* Wordbook Mobile Responsive Fixes */
-  .wordbook-title-group h2 {
-    font-size: 17px;
-  }
-
-  .vocab-form-row {
-    flex-direction: column;
-    gap: 8px;
-    width: 100%;
-  }
-
-  .vocab-word-input {
-    max-width: 100% !important;
-    width: 100%;
-  }
-
-  .vocab-mean-input,
-  .vocab-ex-input {
-    width: 100%;
-  }
-
-  .input-field {
-    width: 100%;
-    box-sizing: border-box;
-    font-size: 14.5px;
-    padding: 10px 12px;
-  }
-
-  #save-vocab-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 11px;
-    font-size: 14px;
-    font-weight: 700;
-  }
-
-  .wordbook-toolbar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
-  }
-
-  .wordbook-count-text {
-    font-size: 12px;
-  }
-
-  .input-search {
-    width: 100%;
-    box-sizing: border-box;
-    font-size: 14px;
-    padding: 9px 12px;
-  }
-
-  .wordbook-list {
-    max-height: 240px;
+  .memo-card {
+    height: 75vh;
   }
 
   .cal-day-cell {
