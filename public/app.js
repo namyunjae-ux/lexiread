@@ -1117,7 +1117,11 @@ function saveLocalVocab(vocab) {
 }
 
 function loadLocalVocab() {
-  state.vocab = getLocalVocab();
+  let list = getLocalVocab();
+  // Filter out any legacy test/sample words like 'faster'
+  list = list.filter(v => v && v.word && v.word.toLowerCase() !== 'faster' && v.word.toLowerCase() !== 'it');
+  saveLocalVocab(list);
+  state.vocab = list;
   updateVocabBadge();
 }
 
