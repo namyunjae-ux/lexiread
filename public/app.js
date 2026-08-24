@@ -18,11 +18,7 @@ let state = {
   currentMode: 'read', // 'read' | 'type'
   typing: {
     sentences: [],
-    currentIndex: 0,
-    startTime: null,
-    totalCharsTyped: 0,
-    correctCharsTyped: 0,
-    mistakesInCurrent: 0
+    currentIndex: 0
   }
 };
 
@@ -79,6 +75,24 @@ const wordbookListContainer = document.getElementById('wordbook-list-container')
 const wordbookTotalCount = document.getElementById('wordbook-total-count');
 const wordbookSearch = document.getElementById('wordbook-search');
 const vocabCountBadge = document.getElementById('vocab-count-badge');
+
+// IN-APP INSTANT DICTIONARY ELEMENTS
+const dictionaryModal = document.getElementById('dictionary-modal');
+const openDictModalBtn = document.getElementById('open-dict-modal-btn');
+const closeDictBtn = document.getElementById('close-dict-btn');
+const dictSearchForm = document.getElementById('dict-search-form');
+const dictSearchInput = document.getElementById('dict-search-input');
+const dictResultView = document.getElementById('dict-result-view');
+
+// FLOATING QUICK POPOVER ELEMENTS
+const dictQuickPopover = document.getElementById('dict-quick-popover');
+const popoverWord = document.getElementById('popover-word');
+const popoverPhonetic = document.getElementById('popover-phonetic');
+const popoverSpeakBtn = document.getElementById('popover-speak-btn');
+const popoverCloseBtn = document.getElementById('popover-close-btn');
+const popoverBody = document.getElementById('popover-body');
+const popoverAddBtn = document.getElementById('popover-add-btn');
+const popoverFullBtn = document.getElementById('popover-full-btn');
 
 // AUTH MODAL ELEMENTS
 const authModal = document.getElementById('auth-modal');
@@ -154,6 +168,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyTheme(state.activeTheme);
   applyFontSize(state.fontSize);
   setupEventListeners();
+  setupTextSelectionDictionary();
 
   loadLocalVocab();
   calculateLocalStreak(getLocalHistory());
@@ -175,7 +190,6 @@ function setupEventListeners() {
 
   // Typing Input listener
   if (typingInputField) {
-    typingInputField.addEventListener('input', handleTypingInput);
     typingInputField.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -192,6 +206,26 @@ function setupEventListeners() {
       const today = getLocalDateKey();
       state.selectedDate = today;
       loadArticlesForDate(today);
+    });
+  }
+
+  // In-App Dictionary Triggers
+  if (openDictModalBtn) {
+    openDictModalBtn.addEventListener('click', () => {
+      if (dictionaryModal) dictionaryModal.style.display = 'flex';
+      setTimeout(() => dictSearchInput?.focus(), 150);
+    });
+  }
+  if (closeDictBtn) {
+    closeDictBtn.addEventListener('click', () => {
+      if (dictionaryModal) dictionaryModal.style.display = 'none';
+    });
+  }
+  if (dictSearchForm) {
+    dictSearchForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const word = dictSearchInput?.value.trim();
+      if (word) searchDictionary(word);
     });
   }
 
@@ -288,6 +322,7 @@ function setupEventListeners() {
   document.addEventListener('click', (e) => {
     if (e.target === calendarModal) calendarModal.style.display = 'none';
     if (e.target === wordbookModal) wordbookModal.style.display = 'none';
+    if (e.target === dictionaryModal) dictionaryModal.style.display = 'none';
     if (e.target === authModal) authModal.style.display = 'none';
   });
 }
@@ -528,7 +563,6 @@ function extractSentencesForArticle(article) {
 
   const sentences = [];
   article.paragraphs.forEach(p => {
-    // Match individual sentences cleanly within each paragraph
     const matched = p.match(/[^.!?]+[.!?]+["'”]?|[^.!?]+$/g) || [];
     matched.forEach(s => {
       const trimmed = s.trim().replace(/\s+/g, ' ');
@@ -574,14 +608,10 @@ function renderCurrentTypingSentence() {
   const pct = Math.round(((currIdx + 1) / total) * 100);
   if (typingProgressFill) typingProgressFill.style.width = `${pct}%`;
 
-  // Clean, non-distracting readable plain text display (No character spans, no live color flash)
+  // Clean, non-distracting readable plain text display
   if (typingTargetDisplay) {
     typingTargetDisplay.textContent = targetSentence;
   }
-}
-
-function handleTypingInput() {
-  // Clean typing without disruptive letter coloring
 }
 
 function handleSentenceEnterAdvance(e) {
@@ -805,6 +835,270 @@ function renderCalendar() {
 
     calendarDaysGrid.appendChild(cell);
   }
+}
+
+// ----------------------------------------------------
+// IN-APP INSTANT DICTIONARY & SEARCH
+// ----------------------------------------------------
+async function searchDictionary(word) {
+  if (!word) return;
+  const cleanWord = word.trim().toLowerCase().replace(/[^a-z'-]/g, '');
+  if (!cleanWord) return;
+
+  if (dictSearchInput) dictSearchInput.value = cleanWord;
+  if (dictionaryModal) dictionaryModal.style.display = 'flex';
+
+  if (dictResultView) {
+    dictResultView.innerHTML = `
+      <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Looking up "${escapeHTML(cleanWord)}" in dictionary...</p>
+      </div>
+    `;
+  }
+
+  try {
+    let data = null;
+    const resp = await fetch(`/api/dictionary/${encodeURIComponent(cleanWord)}`);
+    if (resp.ok) {
+      data = await resp.json();
+    } else {
+      // Direct client fallback to Free Dictionary API
+      const fallbackResp = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`);
+      if (fallbackResp.ok) {
+        const raw = await fallbackResp.json();
+        if (Array.isArray(raw) && raw.length > 0) {
+          const item = raw[0];
+          data = {
+            word: item.word,
+            phonetic: item.phonetic || item.phonetics?.find(p => p.text)?.text || '',
+            meanings: (item.meanings || []).map(m => ({
+              partOfSpeech: m.partOfSpeech,
+              definitions: (m.definitions || []).slice(0, 3).map(d => ({
+                definition: d.definition,
+                example: d.example || null
+              }))
+            }))
+          };
+        }
+      }
+    }
+
+    if (data && data.word) {
+      renderDictionaryResult(data);
+    } else {
+      if (dictResultView) {
+        dictResultView.innerHTML = `
+          <div class="dict-empty-state">
+            <span class="dict-empty-icon">❓</span>
+            <h3>No definition found for "${escapeHTML(cleanWord)}"</h3>
+            <p style="font-size:12.5px; margin-top:6px;">Please check spelling or try the root form of the word.</p>
+          </div>
+        `;
+      }
+    }
+  } catch (err) {
+    if (dictResultView) {
+      dictResultView.innerHTML = `
+        <div class="dict-empty-state">
+          <span class="dict-empty-icon">⚠️</span>
+          <h3>Dictionary connection error</h3>
+          <p style="font-size:12.5px; margin-top:6px;">Please check your connection and try again.</p>
+        </div>
+      `;
+    }
+  }
+}
+
+function renderDictionaryResult(data) {
+  if (!dictResultView) return;
+  dictResultView.innerHTML = '';
+
+  const header = document.createElement('div');
+  header.className = 'dict-word-header';
+  header.innerHTML = `
+    <div class="dict-word-main">
+      <span>${escapeHTML(data.word)}</span>
+      ${data.phonetic ? `<span class="dict-phonetic-badge">${escapeHTML(data.phonetic)}</span>` : ''}
+    </div>
+    <button class="dict-audio-btn" id="dict-play-audio-btn">
+      <span>🔊 Listen</span>
+    </button>
+  `;
+
+  header.querySelector('#dict-play-audio-btn').addEventListener('click', () => {
+    speakWordBrowser(data.word);
+  });
+  dictResultView.appendChild(header);
+
+  (data.meanings || []).forEach(m => {
+    const card = document.createElement('div');
+    card.className = 'dict-meaning-card';
+
+    const posHeader = document.createElement('div');
+    posHeader.className = 'dict-pos-header';
+    posHeader.innerHTML = `<span class="dict-pos-pill">${escapeHTML(m.partOfSpeech)}</span>`;
+    card.appendChild(posHeader);
+
+    (m.definitions || []).forEach((d, idx) => {
+      const defItem = document.createElement('div');
+      defItem.className = 'dict-def-item';
+      defItem.innerHTML = `
+        <div class="dict-def-text"><strong>${idx + 1}.</strong> ${escapeHTML(d.definition)}</div>
+        ${d.example ? `<div class="dict-def-example">"${escapeHTML(d.example)}"</div>` : ''}
+        <button class="dict-save-to-wordbook-btn">+ Save this definition to Wordbook 📝</button>
+      `;
+
+      defItem.querySelector('.dict-save-to-wordbook-btn').addEventListener('click', () => {
+        saveDirectToWordbook(data.word, `(${m.partOfSpeech}) ${d.definition}`, d.example || '');
+      });
+
+      card.appendChild(defItem);
+    });
+
+    dictResultView.appendChild(card);
+  });
+}
+
+function saveDirectToWordbook(word, meaning, example = '') {
+  const newEntry = {
+    id: 'voc_' + Date.now(),
+    word,
+    definition: meaning,
+    example,
+    articleTitle: state.currentArticle ? state.currentArticle.title : '',
+    savedAt: new Date().toISOString()
+  };
+
+  state.vocab.unshift(newEntry);
+  saveLocalVocab(state.vocab);
+  updateVocabBadge();
+  showToast(`"${word}" saved to Wordbook! 📝`);
+
+  if (state.user) {
+    apiRequest('/api/user/vocab', {
+      method: 'POST',
+      body: JSON.stringify({
+        word,
+        definition: meaning,
+        example,
+        articleTitle: newEntry.articleTitle
+      })
+    }).catch(() => {});
+  }
+}
+
+// ----------------------------------------------------
+// FLOATING POPOVER & SELECTION DICTIONARY
+// ----------------------------------------------------
+let currentPopoverData = null;
+
+function setupTextSelectionDictionary() {
+  if (canvasBody) {
+    canvasBody.addEventListener('dblclick', handleArticleWordSelection);
+    canvasBody.addEventListener('mouseup', handleArticleWordSelection);
+  }
+
+  if (popoverCloseBtn) {
+    popoverCloseBtn.addEventListener('click', hideQuickPopover);
+  }
+
+  if (popoverSpeakBtn) {
+    popoverSpeakBtn.addEventListener('click', () => {
+      if (currentPopoverData && currentPopoverData.word) {
+        speakWordBrowser(currentPopoverData.word);
+      }
+    });
+  }
+
+  if (popoverAddBtn) {
+    popoverAddBtn.addEventListener('click', () => {
+      if (currentPopoverData) {
+        saveDirectToWordbook(currentPopoverData.word, currentPopoverData.definition, currentPopoverData.example || '');
+        hideQuickPopover();
+      }
+    });
+  }
+
+  if (popoverFullBtn) {
+    popoverFullBtn.addEventListener('click', () => {
+      if (currentPopoverData && currentPopoverData.word) {
+        const word = currentPopoverData.word;
+        hideQuickPopover();
+        searchDictionary(word);
+      }
+    });
+  }
+
+  // Close popover when clicking elsewhere
+  document.addEventListener('mousedown', (e) => {
+    if (dictQuickPopover && dictQuickPopover.style.display !== 'none') {
+      if (!dictQuickPopover.contains(e.target) && !canvasBody.contains(e.target)) {
+        hideQuickPopover();
+      }
+    }
+  });
+}
+
+async function handleArticleWordSelection(e) {
+  const selection = window.getSelection();
+  const text = selection.toString().trim();
+  if (!text || text.length < 2 || text.length > 35 || /\s{2,}/.test(text) || text.includes('\n')) {
+    return;
+  }
+
+  const cleanWord = text.toLowerCase().replace(/[^a-z'-]/g, '');
+  if (!cleanWord || cleanWord.length < 2) return;
+
+  const range = selection.getRangeAt(0);
+  const rect = range.getBoundingClientRect();
+
+  showQuickPopover(cleanWord, rect);
+}
+
+async function showQuickPopover(word, rect) {
+  if (!dictQuickPopover) return;
+
+  currentPopoverData = { word, definition: '', example: '' };
+  if (popoverWord) popoverWord.textContent = word;
+  if (popoverPhonetic) popoverPhonetic.textContent = '';
+  if (popoverBody) popoverBody.innerHTML = '<div class="popover-loading">Looking up definition...</div>';
+
+  dictQuickPopover.style.display = 'flex';
+  const top = window.scrollY + rect.top - 140;
+  const left = Math.max(10, Math.min(window.innerWidth - 305, window.scrollX + rect.left - 40));
+  dictQuickPopover.style.top = `${Math.max(10, top)}px`;
+  dictQuickPopover.style.left = `${left}px`;
+
+  try {
+    const resp = await fetch(`/api/dictionary/${encodeURIComponent(word)}`);
+    if (resp.ok) {
+      const data = await resp.json();
+      currentPopoverData.word = data.word;
+      if (popoverPhonetic && data.phonetic) popoverPhonetic.textContent = data.phonetic;
+
+      const firstMeaning = data.meanings?.[0];
+      const firstDef = firstMeaning?.definitions?.[0]?.definition || 'Definition found.';
+      const firstEx = firstMeaning?.definitions?.[0]?.example || '';
+      currentPopoverData.definition = `(${firstMeaning?.partOfSpeech || 'def'}) ${firstDef}`;
+      currentPopoverData.example = firstEx;
+
+      if (popoverBody) {
+        popoverBody.innerHTML = `
+          <div><strong>[${escapeHTML(firstMeaning?.partOfSpeech || 'word')}]</strong> ${escapeHTML(firstDef)}</div>
+          ${firstEx ? `<div style="font-size:11.5px; color:var(--text-muted); font-style:italic; margin-top:3px;">"${escapeHTML(firstEx)}"</div>` : ''}
+        `;
+      }
+    } else {
+      if (popoverBody) popoverBody.textContent = `Click "Full Dictionary" to search online for "${word}".`;
+    }
+  } catch (err) {
+    if (popoverBody) popoverBody.textContent = 'Definition lookup failed.';
+  }
+}
+
+function hideQuickPopover() {
+  if (dictQuickPopover) dictQuickPopover.style.display = 'none';
 }
 
 // ----------------------------------------------------

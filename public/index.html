@@ -80,11 +80,11 @@
       <!-- Reader Toolbar -->
       <div class="reader-toolbar" id="reader-toolbar">
         <div class="toolbar-left">
-          <!-- Online Dictionary Direct Link -->
-          <a href="https://dictionary.cambridge.org" target="_blank" rel="noopener noreferrer" class="cambridge-dict-link" title="Open Online Dictionary in new tab">
+          <!-- In-App Instant Dictionary Button -->
+          <button class="btn btn-outline btn-sm" id="open-dict-modal-btn" title="Look up any word in English Dictionary">
             <span class="dict-icon">🔍</span>
-            <span class="dict-label">Dictionary ↗</span>
-          </a>
+            <span class="dict-label">Dictionary</span>
+          </button>
 
           <!-- Mode Switcher: Read Mode vs Type Mode -->
           <div class="mode-toggle-group">
@@ -283,6 +283,50 @@
         <div class="auth-error" id="reg-error"></div>
         <button type="submit" class="btn btn-primary btn-block">Create Free Account</button>
       </form>
+    </div>
+  </div>
+
+  <!-- IN-APP INSTANT ENGLISH DICTIONARY MODAL -->
+  <div class="modal-overlay" id="dictionary-modal" style="display: none;">
+    <div class="modal-card dict-modal-card">
+      <div class="modal-header">
+        <div class="dict-modal-title-group">
+          <h2>🔍 Instant English Dictionary</h2>
+          <span class="modal-subtitle">Search definitions, phonetics, examples & save directly to wordbook</span>
+        </div>
+        <button class="modal-close-btn" id="close-dict-btn">&times;</button>
+      </div>
+
+      <!-- Dictionary Search Form -->
+      <form class="dict-search-form" id="dict-search-form">
+        <input type="text" id="dict-search-input" class="input-field dict-search-input" placeholder="Type an English word (e.g. profound, ephemeral, thrive)..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" required>
+        <button type="submit" class="btn btn-primary" id="dict-search-submit">Search</button>
+      </form>
+
+      <!-- Dictionary Results Area -->
+      <div class="dict-result-view" id="dict-result-view">
+        <div class="dict-empty-state">
+          <span class="dict-empty-icon">📖</span>
+          <p>Type any English word above or double-click words in the article for instant in-app definitions.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FLOATING QUICK DICT POPOVER (ON TEXT SELECTION / DOUBLE CLICK) -->
+  <div class="dict-quick-popover" id="dict-quick-popover" style="display: none;">
+    <div class="popover-header">
+      <span class="popover-word" id="popover-word">Word</span>
+      <span class="popover-phonetic" id="popover-phonetic"></span>
+      <button class="popover-speak-btn" id="popover-speak-btn" title="Listen">🔊</button>
+      <button class="popover-close-btn" id="popover-close-btn">&times;</button>
+    </div>
+    <div class="popover-body" id="popover-body">
+      <div class="popover-loading">Looking up...</div>
+    </div>
+    <div class="popover-footer">
+      <button class="popover-add-btn" id="popover-add-btn">+ Save to Wordbook</button>
+      <button class="popover-full-btn" id="popover-full-btn">Full Dictionary 🔍</button>
     </div>
   </div>
 

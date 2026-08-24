@@ -321,37 +321,66 @@ app.get('/api/dictionary/:word', async (req, res) => {
 
   try {
     const dictResp = await axios.get(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
       timeout: 6000
     });
 
-    const data = dictResp.data[0];
-    let phonetic = data.phonetic || (data.phonetics && data.phonetics.find(p => p.text)?.text) || '';
-    let audioUrl = (data.phonetics && data.phonetics.find(p => p.audio && p.audio.length > 0)?.audio) || '';
+    if (dictResp.data && dictResp.data.length > 0) {
+      const data = dictResp.data[0];
+      let phonetic = data.phonetic || (data.phonetics && data.phonetics.find(p => p.text)?.text) || '';
+      let audioUrl = (data.phonetics && data.phonetics.find(p => p.audio && p.audio.length > 0)?.audio) || '';
 
-    const meanings = (data.meanings || []).map(m => ({
-      partOfSpeech: m.partOfSpeech,
-      definitions: (m.definitions || []).slice(0, 3).map(d => ({
-        definition: d.definition,
-        example: d.example || null,
-        synonyms: (d.synonyms || []).slice(0, 4)
-      }))
-    }));
+      const meanings = (data.meanings || []).map(m => ({
+        partOfSpeech: m.partOfSpeech,
+        definitions: (m.definitions || []).slice(0, 3).map(d => ({
+          definition: d.definition,
+          example: d.example || null,
+          synonyms: (d.synonyms || []).slice(0, 4)
+        }))
+      }));
 
-    const result = {
-      word: data.word,
-      phonetic,
-      audioUrl,
-      meanings: meanings.slice(0, 3)
-    };
+      const result = {
+        word: data.word,
+        phonetic,
+        audioUrl,
+        meanings: meanings.slice(0, 4)
+      };
 
-    DICT_CACHE[word] = result;
-    res.json(result);
+      DICT_CACHE[word] = result;
+      return res.json(result);
+    }
   } catch (err) {
-    res.status(404).json({
-      error: `Definition for "${word}" not found in standard dictionary.`,
-      word
-    });
+    // Fallback to Wiktionary
+    try {
+      const wikResp = await axios.get(`https://en.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(word)}`, {
+        headers: { 'User-Agent': 'LexiRead/1.0' },
+        timeout: 4000
+      });
+      if (wikResp.data && wikResp.data.en && wikResp.data.en.length > 0) {
+        const meanings = wikResp.data.en.map(item => ({
+          partOfSpeech: item.partOfSpeech,
+          definitions: (item.definitions || []).slice(0, 2).map(d => ({
+            definition: d.definition.replace(/<[^>]+>/g, ''),
+            example: null,
+            synonyms: []
+          }))
+        }));
+        const result = {
+          word,
+          phonetic: '',
+          audioUrl: '',
+          meanings
+        };
+        DICT_CACHE[word] = result;
+        return res.json(result);
+      }
+    } catch (e2) {}
   }
+
+  res.status(404).json({
+    error: `Definition for "${word}" not found in standard dictionary.`,
+    word
+  });
 });
 
 // ----------------------------------------------------
