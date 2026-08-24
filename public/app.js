@@ -143,11 +143,15 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyFontSize(state.fontSize);
   setupEventListeners();
 
-  // Simple Memo auto-load & auto-save
+  // Simple Memo auto-load, local cache & cloud sync
   if (memoTextarea) {
     memoTextarea.value = localStorage.getItem('lexiread_memo') || '';
     memoTextarea.addEventListener('input', () => {
-      localStorage.setItem('lexiread_memo', memoTextarea.value);
+      const val = memoTextarea.value;
+      localStorage.setItem('lexiread_memo', val);
+      if (state.user) {
+        syncMemoToServer(val);
+      }
     });
   }
 
@@ -830,6 +834,40 @@ function speakWordBrowser(word) {
 // ----------------------------------------------------
 // DAILY STREAK & DATA SYNC
 // ----------------------------------------------------
+let memoSyncTimeout = null;
+
+function syncMemoToServer(memoText) {
+  if (!state.user) return;
+  clearTimeout(memoSyncTimeout);
+  memoSyncTimeout = setTimeout(() => {
+    apiRequest('/api/user/memo', {
+      method: 'POST',
+      body: JSON.stringify({ memo: memoText })
+    }).catch(() => {});
+  }, 500);
+}
+
+async function loadUserMemoFromServer() {
+  if (!state.user) return;
+  try {
+    const resp = await apiRequest('/api/user/memo');
+    if (resp.ok) {
+      const data = await resp.json();
+      if (typeof data.memo === 'string') {
+        const localMemo = localStorage.getItem('lexiread_memo') || '';
+        if (data.memo) {
+          localStorage.setItem('lexiread_memo', data.memo);
+          if (memoTextarea) memoTextarea.value = data.memo;
+        } else if (localMemo) {
+          syncMemoToServer(localMemo);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Failed to load user memo:', err);
+  }
+}
+
 async function loadUserStreak() {
   if (!state.user) return;
   try {
@@ -843,7 +881,7 @@ async function loadUserStreak() {
 }
 
 async function loadUserData() {
-  await loadUserStreak();
+  await Promise.all([loadUserStreak(), loadUserMemoFromServer()]);
 }
 
 // ----------------------------------------------------

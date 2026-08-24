@@ -397,6 +397,25 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
 });
 
 // ----------------------------------------------------
+// REST APIS: MEMO & NOTEPAD SYNC
+// ----------------------------------------------------
+const MEMOS_FILE = path.join(DATA_DIR, 'memos.json');
+
+app.get('/api/user/memo', authMiddleware, (req, res) => {
+  const allMemos = loadJSON(MEMOS_FILE, {});
+  const userMemo = allMemos[req.user.id] || '';
+  res.json({ memo: userMemo });
+});
+
+app.post('/api/user/memo', authMiddleware, (req, res) => {
+  const { memo } = req.body;
+  const allMemos = loadJSON(MEMOS_FILE, {});
+  allMemos[req.user.id] = typeof memo === 'string' ? memo : '';
+  saveJSON(MEMOS_FILE, allMemos);
+  res.json({ success: true });
+});
+
+// ----------------------------------------------------
 // REST APIS: STREAK & CALENDAR
 // ----------------------------------------------------
 app.get('/api/user/streak', authMiddleware, (req, res) => {
