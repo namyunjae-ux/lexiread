@@ -63,20 +63,6 @@ const calNextMonthBtn = document.getElementById('cal-next-month');
 const calMonthYearLabel = document.getElementById('cal-month-year-label');
 const calendarDaysGrid = document.getElementById('calendar-days-grid');
 
-// WORDBOOK & NOTES ELEMENTS
-const wordbookModal = document.getElementById('wordbook-modal');
-const openWordbookBtn = document.getElementById('open-wordbook-btn');
-const quickAddNoteBtn = document.getElementById('quick-add-note-btn');
-const closeWordbookBtn = document.getElementById('close-wordbook-btn');
-const addVocabForm = document.getElementById('add-vocab-form');
-const newVocabWord = document.getElementById('new-vocab-word');
-const newVocabMeaning = document.getElementById('new-vocab-meaning');
-const newVocabExample = document.getElementById('new-vocab-example');
-const wordbookListContainer = document.getElementById('wordbook-list-container');
-const wordbookTotalCount = document.getElementById('wordbook-total-count');
-const wordbookSearch = document.getElementById('wordbook-search');
-const vocabCountBadge = document.getElementById('vocab-count-badge');
-
 // IN-APP INSTANT DICTIONARY ELEMENTS
 const dictionaryModal = document.getElementById('dictionary-modal');
 const openDictModalBtn = document.getElementById('open-dict-modal-btn');
@@ -92,7 +78,6 @@ const popoverPhonetic = document.getElementById('popover-phonetic');
 const popoverSpeakBtn = document.getElementById('popover-speak-btn');
 const popoverCloseBtn = document.getElementById('popover-close-btn');
 const popoverBody = document.getElementById('popover-body');
-const popoverAddBtn = document.getElementById('popover-add-btn');
 const popoverFullBtn = document.getElementById('popover-full-btn');
 
 // AUTH MODAL ELEMENTS
@@ -171,7 +156,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupEventListeners();
   setupTextSelectionDictionary();
 
-  loadLocalVocab();
   calculateLocalStreak(getLocalHistory());
   await checkAuthSession();
   await loadArticlesForDate(state.selectedDate);
@@ -276,30 +260,6 @@ function setupEventListeners() {
     });
   }
 
-  // Wordbook Modal triggers
-  if (openWordbookBtn) {
-    openWordbookBtn.addEventListener('click', () => {
-      renderWordbookList();
-      wordbookModal.style.display = 'flex';
-    });
-  }
-  if (quickAddNoteBtn) {
-    quickAddNoteBtn.addEventListener('click', () => {
-      renderWordbookList();
-      wordbookModal.style.display = 'flex';
-      setTimeout(() => newVocabWord?.focus(), 150);
-    });
-  }
-  if (closeWordbookBtn) {
-    closeWordbookBtn.addEventListener('click', () => wordbookModal.style.display = 'none');
-  }
-  if (addVocabForm) {
-    addVocabForm.addEventListener('submit', handleAddVocabSubmit);
-  }
-  if (wordbookSearch) {
-    wordbookSearch.addEventListener('input', (e) => renderWordbookList(e.target.value));
-  }
-
   // Auth Modal
   if (closeAuthBtn) {
     closeAuthBtn.addEventListener('click', () => {
@@ -323,7 +283,6 @@ function setupEventListeners() {
   // Close modals on outside click
   document.addEventListener('click', (e) => {
     if (e.target === calendarModal) calendarModal.style.display = 'none';
-    if (e.target === wordbookModal) wordbookModal.style.display = 'none';
     if (e.target === dictionaryModal) dictionaryModal.style.display = 'none';
     if (e.target === authModal) authModal.style.display = 'none';
   });
@@ -964,46 +923,13 @@ function renderDictionaryResult(data) {
       defItem.innerHTML = `
         <div class="dict-def-text"><strong>${idx + 1}.</strong> ${escapeHTML(d.definition)}</div>
         ${d.example ? `<div class="dict-def-example">"${escapeHTML(d.example)}"</div>` : ''}
-        <button class="dict-save-to-wordbook-btn">+ Save this definition to Wordbook 📝</button>
       `;
-
-      defItem.querySelector('.dict-save-to-wordbook-btn').addEventListener('click', () => {
-        saveDirectToWordbook(data.word, `(${m.partOfSpeech}) ${d.definition}`, d.example || '');
-      });
 
       card.appendChild(defItem);
     });
 
     dictResultView.appendChild(card);
   });
-}
-
-function saveDirectToWordbook(word, meaning, example = '') {
-  const newEntry = {
-    id: 'voc_' + Date.now(),
-    word,
-    definition: meaning,
-    example,
-    articleTitle: state.currentArticle ? state.currentArticle.title : '',
-    savedAt: new Date().toISOString()
-  };
-
-  state.vocab.unshift(newEntry);
-  saveLocalVocab(state.vocab);
-  updateVocabBadge();
-  showToast(`"${word}" saved to Wordbook! 📝`);
-
-  if (state.user) {
-    apiRequest('/api/user/vocab', {
-      method: 'POST',
-      body: JSON.stringify({
-        word,
-        definition: meaning,
-        example,
-        articleTitle: newEntry.articleTitle
-      })
-    }).catch(() => {});
-  }
 }
 
 // ----------------------------------------------------
@@ -1025,15 +951,6 @@ function setupTextSelectionDictionary() {
     popoverSpeakBtn.addEventListener('click', () => {
       if (currentPopoverData && currentPopoverData.word) {
         speakWordBrowser(currentPopoverData.word);
-      }
-    });
-  }
-
-  if (popoverAddBtn) {
-    popoverAddBtn.addEventListener('click', () => {
-      if (currentPopoverData) {
-        saveDirectToWordbook(currentPopoverData.word, currentPopoverData.definition, currentPopoverData.example || '');
-        hideQuickPopover();
       }
     });
   }
@@ -1119,150 +1036,6 @@ function hideQuickPopover() {
   if (dictQuickPopover) dictQuickPopover.style.display = 'none';
 }
 
-// ----------------------------------------------------
-// WORDBOOK & STUDY NOTES MANAGEMENT
-// ----------------------------------------------------
-function getLocalVocab() {
-  try {
-    return JSON.parse(localStorage.getItem('lexiread_user_vocab') || '[]');
-  } catch (e) {
-    return [];
-  }
-}
-
-function saveLocalVocab(vocab) {
-  localStorage.setItem('lexiread_user_vocab', JSON.stringify(vocab));
-}
-
-function loadLocalVocab() {
-  let list = getLocalVocab();
-  // Filter out any legacy test/sample words like 'faster'
-  list = list.filter(v => v && v.word && v.word.toLowerCase() !== 'faster' && v.word.toLowerCase() !== 'it');
-  saveLocalVocab(list);
-  state.vocab = list;
-  updateVocabBadge();
-}
-
-function updateVocabBadge() {
-  if (vocabCountBadge) vocabCountBadge.textContent = state.vocab.length;
-  if (wordbookTotalCount) wordbookTotalCount.textContent = `${state.vocab.length} saved words`;
-}
-
-async function handleAddVocabSubmit(e) {
-  e.preventDefault();
-  const word = newVocabWord?.value.trim();
-  const meaning = newVocabMeaning?.value.trim();
-  const example = newVocabExample?.value.trim() || '';
-
-  if (!word || !meaning) return;
-
-  const newEntry = {
-    id: 'voc_' + Date.now(),
-    word,
-    definition: meaning,
-    example,
-    articleTitle: state.currentArticle ? state.currentArticle.title : '',
-    savedAt: new Date().toISOString()
-  };
-
-  // Add to local state & storage
-  state.vocab.unshift(newEntry);
-  saveLocalVocab(state.vocab);
-  updateVocabBadge();
-  renderWordbookList(wordbookSearch?.value || '');
-
-  // Reset form inputs
-  if (newVocabWord) newVocabWord.value = '';
-  if (newVocabMeaning) newVocabMeaning.value = '';
-  if (newVocabExample) newVocabExample.value = '';
-
-  showToast(`"${word}" added to your Wordbook! 📝`);
-
-  // If logged in, sync with server
-  if (state.user) {
-    try {
-      await apiRequest('/api/user/vocab', {
-        method: 'POST',
-        body: JSON.stringify({
-          word,
-          definition: meaning,
-          example,
-          articleTitle: newEntry.articleTitle
-        })
-      });
-    } catch (err) {
-      console.warn('Wordbook server sync failed:', err);
-    }
-  }
-}
-
-function renderWordbookList(filter = '') {
-  if (!wordbookListContainer) return;
-  wordbookListContainer.innerHTML = '';
-
-  const list = state.vocab || [];
-  const filtered = list.filter(v => 
-    v.word.toLowerCase().includes(filter.toLowerCase()) || 
-    (v.definition && v.definition.toLowerCase().includes(filter.toLowerCase())) ||
-    (v.example && v.example.toLowerCase().includes(filter.toLowerCase()))
-  );
-
-  if (filtered.length === 0) {
-    wordbookListContainer.innerHTML = `
-      <div style="text-align:center; padding:35px 20px; color:var(--text-muted); font-size:13px;">
-        ${filter ? 'No matching words found.' : 'Your wordbook is empty.<br>Save vocabulary and personal notes here to study!'}
-      </div>
-    `;
-    return;
-  }
-
-  filtered.forEach(v => {
-    const card = document.createElement('div');
-    card.className = 'vocab-item-card';
-    card.innerHTML = `
-      <div class="vocab-card-left">
-        <div class="vocab-word-title">
-          <span>${escapeHTML(v.word)}</span>
-          <button class="btn-speak-word" title="Listen to pronunciation">🔊</button>
-        </div>
-        <div class="vocab-meaning">${escapeHTML(v.definition)}</div>
-        ${v.example ? `<div class="vocab-example">"${escapeHTML(v.example)}"</div>` : ''}
-      </div>
-      <div>
-        <button class="btn-del-vocab" title="Delete word">&times;</button>
-      </div>
-    `;
-
-    // Speak word
-    card.querySelector('.btn-speak-word').addEventListener('click', (e) => {
-      e.stopPropagation();
-      speakWordBrowser(v.word);
-    });
-
-    // Delete word
-    card.querySelector('.btn-del-vocab').addEventListener('click', async (e) => {
-      e.stopPropagation();
-      await deleteVocabEntry(v.id);
-    });
-
-    wordbookListContainer.appendChild(card);
-  });
-}
-
-async function deleteVocabEntry(id) {
-  state.vocab = state.vocab.filter(v => v.id !== id);
-  saveLocalVocab(state.vocab);
-  updateVocabBadge();
-  renderWordbookList(wordbookSearch?.value || '');
-  showToast('Word removed from Wordbook');
-
-  if (state.user) {
-    try {
-      await apiRequest(`/api/user/vocab/${id}`, { method: 'DELETE' });
-    } catch (e) {}
-  }
-}
-
 function speakWordBrowser(word) {
   if ('speechSynthesis' in window) {
     const utterance = new SpeechSynthesisUtterance(word);
@@ -1287,27 +1060,8 @@ async function loadUserStreak() {
   }
 }
 
-async function loadUserVocabFromServer() {
-  if (!state.user) return;
-  try {
-    const resp = await apiRequest('/api/user/vocab');
-    const data = await resp.json();
-    if (data.vocab && data.vocab.length > 0) {
-      // Merge server vocab with local vocab
-      const map = new Map();
-      state.vocab.forEach(v => map.set(v.word.toLowerCase(), v));
-      data.vocab.forEach(v => map.set(v.word.toLowerCase(), v));
-      state.vocab = Array.from(map.values());
-      saveLocalVocab(state.vocab);
-      updateVocabBadge();
-    }
-  } catch (err) {
-    console.error('Failed to load user vocab:', err);
-  }
-}
-
 async function loadUserData() {
-  await Promise.all([loadUserStreak(), loadUserVocabFromServer()]);
+  await loadUserStreak();
 }
 
 // ----------------------------------------------------

@@ -31,12 +31,6 @@
         <span>📅 Calendar</span>
       </button>
 
-      <!-- Wordbook & Notes Button -->
-      <button class="btn btn-outline" id="open-wordbook-btn" title="Open My Wordbook & Study Notes">
-        <span>📝 Wordbook</span>
-        <span class="badge" id="vocab-count-badge">0</span>
-      </button>
-
       <!-- Theme Switcher (Light & Dark) -->
       <div class="theme-controls">
         <button class="theme-btn active" data-theme="theme-light" title="Light Theme">☀️</button>
@@ -98,11 +92,6 @@
         </div>
 
         <div class="toolbar-right">
-          <!-- Quick Note Button in Reader -->
-          <button class="btn btn-outline btn-sm" id="quick-add-note-btn" title="Add a new word or note to Wordbook">
-            <span>✏️ Note Word</span>
-          </button>
-
           <!-- Font Size Controls -->
           <div class="font-resizer-container">
             <span class="font-resizer-label">Text Size:</span>
@@ -206,42 +195,6 @@
     </div>
   </div>
 
-  <!-- WORDBOOK & NOTE-TAKING MODAL -->
-  <div class="modal-overlay" id="wordbook-modal" style="display: none;">
-    <div class="modal-card wordbook-card">
-      <div class="modal-header">
-        <div class="wordbook-title-group">
-          <h2>📝 My Wordbook & Study Notes</h2>
-          <span class="modal-subtitle">Save words, definitions, and personal notes while reading</span>
-        </div>
-        <button class="modal-close-btn" id="close-wordbook-btn">&times;</button>
-      </div>
-
-      <!-- Add New Word / Note Form -->
-      <form class="add-vocab-form" id="add-vocab-form">
-        <div class="vocab-form-row">
-          <input type="text" id="new-vocab-word" required placeholder="Word or phrase (e.g. palpable)" class="input-field vocab-word-input">
-          <input type="text" id="new-vocab-meaning" required placeholder="Meaning / Definition (e.g. easily perceptible)" class="input-field vocab-mean-input">
-        </div>
-        <div class="vocab-form-row">
-          <input type="text" id="new-vocab-example" placeholder="Example sentence or context note (optional)" class="input-field vocab-ex-input">
-          <button type="submit" class="btn btn-primary" id="save-vocab-btn">+ Add Word</button>
-        </div>
-      </form>
-
-      <!-- Wordbook List Header with Search -->
-      <div class="wordbook-toolbar">
-        <span class="wordbook-count-text" id="wordbook-total-count">0 saved words</span>
-        <input type="text" id="wordbook-search" class="input-search" placeholder="Search your words & notes...">
-      </div>
-
-      <!-- List of saved words -->
-      <div class="wordbook-list" id="wordbook-list-container">
-        <!-- Injected by app.js -->
-      </div>
-    </div>
-  </div>
-
   <!-- AUTH MODAL (LOGIN & SIGN UP) -->
   <div class="modal-overlay" id="auth-modal" style="display: none;">
     <div class="modal-card auth-card">
@@ -295,7 +248,7 @@
       <div class="modal-header">
         <div class="dict-modal-title-group">
           <h2>🔍 Instant English Dictionary</h2>
-          <span class="modal-subtitle">Search definitions, phonetics, examples & save directly to wordbook</span>
+          <span class="modal-subtitle">Instant pronunciation, IPA phonetics, and comprehensive definitions</span>
         </div>
         <button class="modal-close-btn" id="close-dict-btn">&times;</button>
       </div>
@@ -328,8 +281,7 @@
       <div class="popover-loading">Looking up...</div>
     </div>
     <div class="popover-footer">
-      <button class="popover-add-btn" id="popover-add-btn">+ Save to Wordbook</button>
-      <button class="popover-full-btn" id="popover-full-btn">Full Dictionary 🔍</button>
+      <button class="popover-full-btn" id="popover-full-btn" style="flex:1;">Full Dictionary 🔍</button>
     </div>
   </div>
 
