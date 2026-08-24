@@ -2,7 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#1a202c">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>LexiRead — Global Daily English Column Reader</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -81,6 +85,16 @@
             <span class="dict-icon">🔍</span>
             <span class="dict-label">Dictionary ↗</span>
           </a>
+
+          <!-- Mode Switcher: Read Mode vs Type Mode -->
+          <div class="mode-toggle-group">
+            <button class="mode-toggle-btn active" id="mode-read-btn" title="Normal Reading Mode">
+              <span>📖 Read</span>
+            </button>
+            <button class="mode-toggle-btn" id="mode-type-btn" title="Sentence Typing & Transcription Mode">
+              <span>✍️ Type & Study</span>
+            </button>
+          </div>
         </div>
 
         <div class="toolbar-right">
@@ -109,7 +123,7 @@
         </div>
       </div>
 
-      <!-- Article Canvas -->
+      <!-- Article Canvas (Reading Mode) -->
       <article class="article-canvas" id="article-canvas">
         <header class="canvas-header">
           <h1 class="canvas-headline" id="canvas-headline">Select a column to begin reading</h1>
@@ -121,6 +135,38 @@
           <p class="placeholder-text">Please select an article from the left sidebar to start your distraction-free reading session.</p>
         </div>
       </article>
+
+      <!-- Typing & Transcription Canvas (Typing Mode) -->
+      <section class="typing-canvas" id="typing-canvas" style="display: none;">
+        <!-- Typing Dashboard / HUD -->
+        <div class="typing-hud">
+          <div class="typing-hud-left">
+            <span class="typing-step-badge" id="typing-step-badge">Sentence 1 of 12</span>
+            <div class="typing-progress-bar">
+              <div class="typing-progress-fill" id="typing-progress-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+          <div class="typing-hud-right">
+            <button class="btn-listen-sentence" id="typing-speak-btn" title="Listen to current sentence audio">
+              <span>🔊 Listen</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Main Interactive Typing Card -->
+        <div class="typing-interactive-card" id="typing-active-box">
+          <div class="typing-target-label">ORIGINAL SENTENCE:</div>
+          <div class="typing-target-text" id="typing-target-display">
+            <!-- Clean readable sentence text rendered here -->
+          </div>
+
+          <div class="typing-input-wrapper">
+            <textarea id="typing-input-field" class="typing-input" rows="2" placeholder="Type the sentence above here... (Press Enter to advance)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+            <button class="btn-skip-sentence" id="typing-skip-btn" title="Skip to next sentence">Skip &rarr;</button>
+          </div>
+          <div class="typing-hint-text">💡 Tip: Type the sentence and press <strong>Enter</strong> to move to the next sentence.</div>
+        </div>
+      </section>
     </section>
 
   </main>

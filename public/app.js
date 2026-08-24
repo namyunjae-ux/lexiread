@@ -14,7 +14,16 @@ let state = {
   fontSize: parseInt(localStorage.getItem('lexiread_fontsize') || '16', 10),
   activeTheme: localStorage.getItem('lexiread_theme') || 'theme-light',
   calYear: new Date().getFullYear(),
-  calMonth: new Date().getMonth() // 0-11
+  calMonth: new Date().getMonth(), // 0-11
+  currentMode: 'read', // 'read' | 'type'
+  typing: {
+    sentences: [],
+    currentIndex: 0,
+    startTime: null,
+    totalCharsTyped: 0,
+    correctCharsTyped: 0,
+    mistakesInCurrent: 0
+  }
 };
 
 // DOM ELEMENTS
@@ -26,12 +35,27 @@ const canvasHeadline = document.getElementById('canvas-headline');
 const canvasAuthor = document.getElementById('canvas-author');
 const canvasStandfirst = document.getElementById('canvas-standfirst');
 const canvasBody = document.getElementById('canvas-body');
+const articleCanvas = document.getElementById('article-canvas');
 const markReadBtn = document.getElementById('mark-read-btn');
 const markReadCheckbox = document.getElementById('mark-read-checkbox');
 const markReadText = document.getElementById('mark-read-text');
 const dailyProgressFill = document.getElementById('daily-progress-fill');
 const dailyProgressText = document.getElementById('daily-progress-text');
 const authSection = document.getElementById('auth-section');
+
+// MODE TOGGLE
+const modeReadBtn = document.getElementById('mode-read-btn');
+const modeTypeBtn = document.getElementById('mode-type-btn');
+
+// TYPING CANVAS ELEMENTS
+const typingCanvas = document.getElementById('typing-canvas');
+const typingStepBadge = document.getElementById('typing-step-badge');
+const typingProgressFill = document.getElementById('typing-progress-fill');
+const typingSpeakBtn = document.getElementById('typing-speak-btn');
+const typingActiveBox = document.getElementById('typing-active-box');
+const typingTargetDisplay = document.getElementById('typing-target-display');
+const typingInputField = document.getElementById('typing-input-field');
+const typingSkipBtn = document.getElementById('typing-skip-btn');
 
 // CALENDAR ELEMENTS
 const calendarModal = document.getElementById('calendar-modal');
@@ -105,9 +129,7 @@ function getLocalDateKey(d = new Date()) {
 
 function getLocalHistory() {
   try {
-    const raw = JSON.parse(localStorage.getItem('lexiread_reading_history') || '{}');
-    // Sanitize: remove stale test dates (like 2026-08-20) if empty or invalid
-    return raw;
+    return JSON.parse(localStorage.getItem('lexiread_reading_history') || '{}');
   } catch (e) {
     return {};
   }
@@ -121,7 +143,7 @@ function saveLocalHistory(hist) {
 // INITIALIZATION
 // ----------------------------------------------------
 document.addEventListener('DOMContentLoaded', async () => {
-  // Prune any legacy test records from localStorage on startup
+  // Prune legacy test records from localStorage on startup
   const localHist = getLocalHistory();
   delete localHist['2026-08-20'];
   delete localHist['2026-08-21'];
@@ -147,6 +169,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 function setupEventListeners() {
+  // Mode Switchers
+  if (modeReadBtn) modeReadBtn.addEventListener('click', () => switchReaderMode('read'));
+  if (modeTypeBtn) modeTypeBtn.addEventListener('click', () => switchReaderMode('type'));
+
+  // Typing Input listener
+  if (typingInputField) {
+    typingInputField.addEventListener('input', handleTypingInput);
+    typingInputField.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        handleSentenceEnterAdvance(e);
+      }
+    });
+  }
+  if (typingSkipBtn) typingSkipBtn.addEventListener('click', advanceToNextSentence);
+  if (typingSpeakBtn) typingSpeakBtn.addEventListener('click', speakCurrentTypingSentence);
+
   // Return to Today Button
   if (returnTodayBtn) {
     returnTodayBtn.addEventListener('click', () => {
@@ -387,7 +426,7 @@ function selectArticle(article) {
   if (canvasHeadline) canvasHeadline.textContent = article.title;
   if (canvasAuthor) canvasAuthor.innerHTML = `By <strong>${escapeHTML(article.author)}</strong>`;
 
-  // DEDUPLICATION: Check if standfirst is identical to first paragraph
+  // Deduplicate standfirst if it duplicates paragraph[0]
   const firstPara = article.paragraphs[0] || '';
   if (article.standfirst && article.standfirst.trim() && canvasStandfirst) {
     const sNorm = article.standfirst.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -403,7 +442,7 @@ function selectArticle(article) {
     canvasStandfirst.style.display = 'none';
   }
 
-  // Update button state
+  // Update read button
   updateMarkReadButtonState();
 
   // Render clean text paragraphs
@@ -414,6 +453,13 @@ function selectArticle(article) {
       pEl.textContent = para;
       canvasBody.appendChild(pEl);
     });
+  }
+
+  // Initialize sentences for Typing Practice Mode
+  extractSentencesForArticle(article);
+
+  if (state.currentMode === 'type') {
+    startTypingSession();
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -450,6 +496,130 @@ function updateDailyProgress() {
     const isToday = (dateKey === getLocalDateKey());
     dailyProgressText.textContent = isToday ? `${completed}/${total} Read Today` : `${completed}/${total} Read on ${dateKey}`;
   }
+}
+
+// ----------------------------------------------------
+// MODE SWITCHER (READING VS TYPING PRACTICE)
+// ----------------------------------------------------
+function switchReaderMode(mode) {
+  state.currentMode = mode;
+  if (mode === 'read') {
+    if (modeReadBtn) modeReadBtn.classList.add('active');
+    if (modeTypeBtn) modeTypeBtn.classList.remove('active');
+    if (articleCanvas) articleCanvas.style.display = 'block';
+    if (typingCanvas) typingCanvas.style.display = 'none';
+  } else {
+    if (modeTypeBtn) modeTypeBtn.classList.add('active');
+    if (modeReadBtn) modeReadBtn.classList.remove('active');
+    if (articleCanvas) articleCanvas.style.display = 'none';
+    if (typingCanvas) typingCanvas.style.display = 'flex';
+    startTypingSession();
+  }
+}
+
+// ----------------------------------------------------
+// SENTENCE TYPING & TRANSCRIPTION (따라쓰기 / 필사)
+// ----------------------------------------------------
+function extractSentencesForArticle(article) {
+  if (!article || !article.paragraphs) {
+    state.typing.sentences = [];
+    return;
+  }
+
+  const sentences = [];
+  article.paragraphs.forEach(p => {
+    // Match individual sentences cleanly within each paragraph
+    const matched = p.match(/[^.!?]+[.!?]+["'”]?|[^.!?]+$/g) || [];
+    matched.forEach(s => {
+      const trimmed = s.trim().replace(/\s+/g, ' ');
+      if (trimmed.length >= 10) {
+        sentences.push(trimmed);
+      }
+    });
+  });
+
+  state.typing.sentences = sentences;
+}
+
+function startTypingSession() {
+  if (!state.typing.sentences || state.typing.sentences.length === 0) {
+    if (state.currentArticle) {
+      extractSentencesForArticle(state.currentArticle);
+    }
+  }
+
+  state.typing.currentIndex = 0;
+  if (typingActiveBox) typingActiveBox.style.display = 'flex';
+
+  renderCurrentTypingSentence();
+  if (typingInputField) {
+    typingInputField.value = '';
+    setTimeout(() => typingInputField.focus(), 100);
+  }
+}
+
+function renderCurrentTypingSentence() {
+  const total = state.typing.sentences.length;
+  const currIdx = state.typing.currentIndex;
+
+  if (currIdx >= total) {
+    finishTypingSession();
+    return;
+  }
+
+  const targetSentence = state.typing.sentences[currIdx];
+
+  // Update HUD
+  if (typingStepBadge) typingStepBadge.textContent = `Sentence ${currIdx + 1} of ${total}`;
+  const pct = Math.round(((currIdx + 1) / total) * 100);
+  if (typingProgressFill) typingProgressFill.style.width = `${pct}%`;
+
+  // Clean, non-distracting readable plain text display (No character spans, no live color flash)
+  if (typingTargetDisplay) {
+    typingTargetDisplay.textContent = targetSentence;
+  }
+}
+
+function handleTypingInput() {
+  // Clean typing without disruptive letter coloring
+}
+
+function handleSentenceEnterAdvance(e) {
+  if (e) e.preventDefault();
+  const inputVal = typingInputField ? typingInputField.value.trim() : '';
+  if (inputVal.length > 0) {
+    advanceToNextSentence();
+  }
+}
+
+function advanceToNextSentence() {
+  state.typing.currentIndex += 1;
+  if (typingInputField) {
+    typingInputField.value = '';
+  }
+
+  const total = state.typing.sentences.length;
+  if (state.typing.currentIndex < total) {
+    renderCurrentTypingSentence();
+    if (typingInputField) typingInputField.focus();
+  } else {
+    finishTypingSession();
+  }
+}
+
+function speakCurrentTypingSentence() {
+  const currIdx = state.typing.currentIndex;
+  const targetSentence = state.typing.sentences[currIdx];
+  if (!targetSentence) return;
+
+  speakWordBrowser(targetSentence);
+}
+
+function finishTypingSession() {
+  showToast('🎉 All sentences in this column transcribed! Returning to reading mode.');
+  setTimeout(() => {
+    switchReaderMode('read');
+  }, 1200);
 }
 
 // ----------------------------------------------------
