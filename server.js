@@ -397,22 +397,37 @@ app.get('/api/auth/me', authMiddleware, (req, res) => {
 });
 
 // ----------------------------------------------------
-// REST APIS: MEMO & NOTEPAD SYNC
+// REST APIS: PER-COLUMN MEMO & NOTEPAD SYNC
 // ----------------------------------------------------
 const MEMOS_FILE = path.join(DATA_DIR, 'memos.json');
 
 app.get('/api/user/memo', authMiddleware, (req, res) => {
   const allMemos = loadJSON(MEMOS_FILE, {});
-  const userMemo = allMemos[req.user.id] || '';
-  res.json({ memo: userMemo });
+  const userMemos = allMemos[req.user.id] || {};
+  if (typeof userMemos === 'string') {
+    res.json({ memos: { '_general': userMemos }, memo: userMemos });
+  } else {
+    res.json({ memos: userMemos, memo: userMemos['_general'] || '' });
+  }
 });
 
 app.post('/api/user/memo', authMiddleware, (req, res) => {
-  const { memo } = req.body;
+  const { memo, articleId, memos } = req.body;
   const allMemos = loadJSON(MEMOS_FILE, {});
-  allMemos[req.user.id] = typeof memo === 'string' ? memo : '';
+  if (!allMemos[req.user.id] || typeof allMemos[req.user.id] !== 'object') {
+    allMemos[req.user.id] = {};
+  }
+  
+  if (memos && typeof memos === 'object') {
+    allMemos[req.user.id] = { ...allMemos[req.user.id], ...memos };
+  } else if (articleId) {
+    allMemos[req.user.id][articleId] = typeof memo === 'string' ? memo : '';
+  } else if (typeof memo === 'string') {
+    allMemos[req.user.id]['_general'] = memo;
+  }
+  
   saveJSON(MEMOS_FILE, allMemos);
-  res.json({ success: true });
+  res.json({ success: true, memos: allMemos[req.user.id] });
 });
 
 // ----------------------------------------------------

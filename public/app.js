@@ -1,6 +1,19 @@
-/**
- * LexiRead - Client Application Logic
- */
+// LOCAL MEMO STORAGE HELPER
+function loadLocalMemosMap() {
+  try {
+    const raw = localStorage.getItem('lexiread_column_memos');
+    if (raw) return JSON.parse(raw);
+    const legacy = localStorage.getItem('lexiread_memo');
+    if (legacy) return { '_general': legacy };
+  } catch (e) {}
+  return {};
+}
+
+function saveLocalMemosMap(memos) {
+  try {
+    localStorage.setItem('lexiread_column_memos', JSON.stringify(memos));
+  } catch (e) {}
+}
 
 // STATE
 let state = {
@@ -18,7 +31,9 @@ let state = {
   typing: {
     sentences: [],
     currentIndex: 0
-  }
+  },
+  memos: loadLocalMemosMap(),
+  activeMemoArticleId: null
 };
 
 // DOM ELEMENTS
@@ -62,11 +77,16 @@ const calNextMonthBtn = document.getElementById('cal-next-month');
 const calMonthYearLabel = document.getElementById('cal-month-year-label');
 const calendarDaysGrid = document.getElementById('calendar-days-grid');
 
-// SIMPLE MEMO ELEMENTS
+// PER-COLUMN MEMO ELEMENTS
 const memoModal = document.getElementById('memo-modal');
 const openMemoBtn = document.getElementById('open-memo-btn');
+const readerMemoBtn = document.getElementById('reader-memo-btn');
 const closeMemoBtn = document.getElementById('close-memo-btn');
 const memoTextarea = document.getElementById('memo-textarea');
+const memoColumnTitle = document.getElementById('memo-column-title');
+const memoColumnSelector = document.getElementById('memo-column-selector');
+const memoStatus = document.getElementById('memo-status');
+const memoCharCount = document.getElementById('memo-char-count');
 
 // AUTH MODAL ELEMENTS
 const authModal = document.getElementById('auth-modal');
@@ -143,17 +163,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   applyFontSize(state.fontSize);
   setupEventListeners();
 
-  // Simple Memo auto-load, local cache & cloud sync
-  if (memoTextarea) {
-    memoTextarea.value = localStorage.getItem('lexiread_memo') || '';
-    memoTextarea.addEventListener('input', () => {
-      const val = memoTextarea.value;
-      localStorage.setItem('lexiread_memo', val);
-      if (state.user) {
-        syncMemoToServer(val);
-      }
-    });
-  }
+  // Load local per-column memos
+  state.memos = loadLocalMemosMap();
 
   // Pronunciation on double-click in article
   if (canvasBody) {
@@ -253,14 +264,21 @@ function setupEventListeners() {
   // Memo Modal triggers
   if (openMemoBtn) {
     openMemoBtn.addEventListener('click', () => {
-      if (memoModal) memoModal.style.display = 'flex';
-      if (memoTextarea) memoTextarea.focus();
+      openColumnMemoModal(state.currentArticle?.id);
+    });
+  }
+  if (readerMemoBtn) {
+    readerMemoBtn.addEventListener('click', () => {
+      openColumnMemoModal(state.currentArticle?.id);
     });
   }
   if (closeMemoBtn) {
     closeMemoBtn.addEventListener('click', () => {
       if (memoModal) memoModal.style.display = 'none';
     });
+  }
+  if (memoTextarea) {
+    memoTextarea.addEventListener('input', handleMemoInput);
   }
 
   // Auth Modal
@@ -390,11 +408,15 @@ function renderSidebarArticles() {
 
   state.articles.forEach((art, idx) => {
     const isRead = readArticles.includes(art.id);
+    const hasMemo = Boolean(state.memos[art.id] && state.memos[art.id].trim());
     const card = document.createElement('div');
     card.className = `article-card-item ${state.currentArticle && state.currentArticle.id === art.id ? 'active' : ''}`;
     card.innerHTML = `
       <div class="card-num-row">
-        <span class="card-num">COLUMN #${idx + 1}</span>
+        <span class="card-num">
+          COLUMN #${idx + 1}
+          ${hasMemo ? '<span class="memo-card-indicator" title="Has personal notes">📝 Note</span>' : ''}
+        </span>
         <span class="card-checkbox ${isRead ? 'checked' : ''}" title="Click to toggle read status">
           ${isRead ? '☑ Read' : '☐ Check'}
         </span>
@@ -424,6 +446,11 @@ function selectArticle(article) {
 
   if (canvasHeadline) canvasHeadline.textContent = article.title;
   if (canvasAuthor) canvasAuthor.innerHTML = `By <strong>${escapeHTML(article.author)}</strong>`;
+
+  // If memo modal is open, switch memo to selected article
+  if (memoModal && memoModal.style.display !== 'none') {
+    switchMemoToArticle(article.id);
+  }
 
   // Deduplicate standfirst if it duplicates paragraph[0]
   const firstPara = article.paragraphs[0] || '';
@@ -832,19 +859,42 @@ function speakWordBrowser(word) {
 }
 
 // ----------------------------------------------------
-// DAILY STREAK & DATA SYNC
+// PER-COLUMN MEMO MANAGEMENT & CLOUD SYNC
 // ----------------------------------------------------
 let memoSyncTimeout = null;
 
-function syncMemoToServer(memoText) {
-  if (!state.user) return;
+function handleMemoInput() {
+  if (!memoTextarea) return;
+  const activeId = state.activeMemoArticleId || (state.currentArticle ? state.currentArticle.id : '_general');
+  const val = memoTextarea.value;
+  state.memos[activeId] = val;
+  saveLocalMemosMap(state.memos);
+  updateMemoCharCount();
+
+  if (memoStatus) memoStatus.textContent = 'Saving...';
+
   clearTimeout(memoSyncTimeout);
   memoSyncTimeout = setTimeout(() => {
-    apiRequest('/api/user/memo', {
-      method: 'POST',
-      body: JSON.stringify({ memo: memoText })
-    }).catch(() => {});
-  }, 500);
+    if (state.user) {
+      syncMemoToServer(activeId, val);
+    } else {
+      if (memoStatus) memoStatus.textContent = 'Auto-saved locally ✓';
+    }
+    renderSidebarArticles();
+    renderMemoColumnSelector();
+  }, 400);
+}
+
+function syncMemoToServer(articleId, memoText) {
+  if (!state.user) return;
+  apiRequest('/api/user/memo', {
+    method: 'POST',
+    body: JSON.stringify({ articleId, memo: memoText, memos: state.memos })
+  }).then(() => {
+    if (memoStatus) memoStatus.textContent = 'Synced to account ✓';
+  }).catch(() => {
+    if (memoStatus) memoStatus.textContent = 'Saved locally ✓';
+  });
 }
 
 async function loadUserMemoFromServer() {
@@ -853,19 +903,82 @@ async function loadUserMemoFromServer() {
     const resp = await apiRequest('/api/user/memo');
     if (resp.ok) {
       const data = await resp.json();
-      if (typeof data.memo === 'string') {
-        const localMemo = localStorage.getItem('lexiread_memo') || '';
-        if (data.memo) {
-          localStorage.setItem('lexiread_memo', data.memo);
-          if (memoTextarea) memoTextarea.value = data.memo;
-        } else if (localMemo) {
-          syncMemoToServer(localMemo);
+      if (data.memos && typeof data.memos === 'object') {
+        state.memos = { ...state.memos, ...data.memos };
+        saveLocalMemosMap(state.memos);
+        if (state.activeMemoArticleId && memoTextarea) {
+          memoTextarea.value = state.memos[state.activeMemoArticleId] || '';
+          updateMemoCharCount();
         }
+        renderSidebarArticles();
+        renderMemoColumnSelector();
       }
     }
   } catch (err) {
-    console.error('Failed to load user memo:', err);
+    console.error('Failed to load user memos:', err);
   }
+}
+
+function openColumnMemoModal(targetArticleId) {
+  if (!memoModal) return;
+  const targetId = targetArticleId || (state.currentArticle ? state.currentArticle.id : (state.articles[0] ? state.articles[0].id : '_general'));
+  switchMemoToArticle(targetId);
+  memoModal.style.display = 'flex';
+  if (memoTextarea) memoTextarea.focus();
+}
+
+function switchMemoToArticle(articleId) {
+  state.activeMemoArticleId = articleId;
+  const art = state.articles.find(a => a.id === articleId) || state.currentArticle;
+  const colIndex = state.articles.findIndex(a => a.id === articleId);
+
+  if (memoColumnTitle) {
+    if (art) {
+      const colNum = colIndex >= 0 ? `Column #${colIndex + 1}: ` : '';
+      memoColumnTitle.textContent = `${colNum}${art.title}`;
+    } else {
+      memoColumnTitle.textContent = 'General Study Notepad';
+    }
+  }
+
+  const currentVal = state.memos[articleId] || '';
+  if (memoTextarea) {
+    memoTextarea.value = currentVal;
+  }
+  if (memoStatus) {
+    memoStatus.textContent = state.user ? 'Synced with account ✓' : 'Auto-saved locally ✓';
+  }
+  updateMemoCharCount();
+  renderMemoColumnSelector();
+}
+
+function renderMemoColumnSelector() {
+  if (!memoColumnSelector || !state.articles || state.articles.length === 0) return;
+  memoColumnSelector.innerHTML = '';
+
+  state.articles.forEach((art, idx) => {
+    const hasNote = Boolean(state.memos[art.id] && state.memos[art.id].trim());
+    const isActive = (state.activeMemoArticleId === art.id);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `memo-col-btn ${isActive ? 'active' : ''}`;
+    btn.innerHTML = `
+      <span>Col #${idx + 1}</span>
+      ${hasNote ? '<span class="memo-col-badge">📝</span>' : ''}
+    `;
+    btn.title = `Column #${idx + 1}: ${art.title}`;
+    btn.addEventListener('click', () => {
+      switchMemoToArticle(art.id);
+    });
+    memoColumnSelector.appendChild(btn);
+  });
+}
+
+function updateMemoCharCount() {
+  if (!memoCharCount || !memoTextarea) return;
+  const len = memoTextarea.value.length;
+  memoCharCount.textContent = `${len.toLocaleString()} characters`;
 }
 
 async function loadUserStreak() {

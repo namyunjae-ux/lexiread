@@ -97,6 +97,11 @@
               <span>✍️ Type & Study</span>
             </button>
           </div>
+
+          <!-- Column Memo Trigger -->
+          <button class="btn btn-outline" id="reader-memo-btn" title="Write or view notes for this column">
+            <span>📝 Column Memo</span>
+          </button>
         </div>
 
         <div class="toolbar-right">
@@ -194,15 +199,27 @@
     </div>
   </div>
 
-  <!-- SIMPLE MEMO / NOTEPAD MODAL -->
+  <!-- PER-COLUMN MEMO / NOTEPAD MODAL -->
   <div class="modal-overlay" id="memo-modal" style="display: none;">
     <div class="modal-card memo-card">
       <div class="modal-header">
-        <h2>📝 Memo</h2>
+        <div class="memo-header-info">
+          <h2>📝 Column Memo</h2>
+          <div class="memo-target-column" id="memo-target-column">📌 <span id="memo-column-title">Select a column</span></div>
+        </div>
         <button class="modal-close-btn" id="close-memo-btn">&times;</button>
       </div>
+
+      <!-- Quick Column Switcher inside Modal -->
+      <div class="memo-column-selector" id="memo-column-selector"></div>
+
       <div class="memo-body">
-        <textarea id="memo-textarea" class="memo-textarea" placeholder="Write your notes and memos here while reading (auto-saved)..."></textarea>
+        <textarea id="memo-textarea" class="memo-textarea" placeholder="Write your personal notes, key takeaways, and vocabulary for this column (auto-saved)..."></textarea>
+      </div>
+
+      <div class="memo-footer">
+        <span class="memo-status" id="memo-status">Auto-saved</span>
+        <span class="memo-char-count" id="memo-char-count">0 characters</span>
       </div>
     </div>
   </div>

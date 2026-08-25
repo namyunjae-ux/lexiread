@@ -777,40 +777,128 @@ body {
   color: var(--text-muted);
 }
 
-/* SIMPLE MEMO & NOTEPAD MODAL */
+/* PER-COLUMN MEMO & NOTEPAD MODAL */
 .memo-card {
-  max-width: 640px;
-  width: 92%;
-  height: 72vh;
-  max-height: 580px;
+  max-width: 680px;
+  width: 94%;
+  height: 76vh;
+  max-height: 620px;
   display: flex;
   flex-direction: column;
+}
+
+.memo-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.memo-target-column {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 520px;
+}
+
+.memo-target-column strong,
+.memo-target-column span {
+  color: var(--accent-color);
+  font-weight: 600;
+}
+
+.memo-column-selector {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 4px 2px 10px 2px;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 10px;
+  scrollbar-width: thin;
+}
+
+.memo-col-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg-app);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.memo-col-btn:hover {
+  border-color: var(--accent-color);
+  color: var(--text-headline);
+}
+
+.memo-col-btn.active {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: #ffffff;
+}
+
+.memo-col-badge {
+  font-size: 10px;
+  opacity: 0.85;
 }
 
 .memo-body {
   flex: 1;
   display: flex;
-  margin-top: 8px;
+  margin-top: 4px;
 }
 
 .memo-textarea {
   width: 100%;
   height: 100%;
-  padding: 14px;
+  padding: 16px;
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--bg-app);
   color: var(--text-main);
-  font-size: 14px;
-  line-height: 1.6;
+  font-size: 14.5px;
+  line-height: 1.65;
   resize: none;
   box-sizing: border-box;
   font-family: inherit;
+  transition: border-color var(--transition-fast);
 }
 
 .memo-textarea:focus {
   outline: none;
   border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+.memo-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 10px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.memo-card-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--accent-color);
+  background: var(--accent-light);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
 }
 
 /* AUTH FORM */
