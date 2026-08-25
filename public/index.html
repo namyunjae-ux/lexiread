@@ -162,11 +162,17 @@
           </div>
 
           <div class="typing-input-wrapper">
-            <textarea id="typing-input-field" class="typing-input" rows="2" placeholder="Type the sentence above here... (Press Enter to advance)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
-            <div class="typing-nav-buttons">
-              <button class="btn-nav-sentence btn-clear-input" id="typing-clear-sentence-btn" title="Clear current input">🗑️ Clear</button>
-              <button class="btn-nav-sentence" id="typing-prev-btn" title="Go to previous sentence" disabled>&larr; Prev</button>
-              <button class="btn-nav-sentence" id="typing-skip-btn" title="Skip to next sentence">Next &rarr;</button>
+            <textarea id="typing-input-field" class="typing-input" rows="3" placeholder="Type the sentence above here... (Press Enter to advance)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+            
+            <!-- Bottom Actions Bar -->
+            <div class="typing-actions-bar">
+              <div class="typing-actions-left">
+                <button class="btn-action-sentence btn-clear-input" id="typing-clear-sentence-btn" title="Clear current input">🗑️ Clear</button>
+              </div>
+              <div class="typing-actions-right">
+                <button class="btn-action-sentence" id="typing-prev-btn" title="Go to previous sentence" disabled>&larr; Prev</button>
+                <button class="btn-action-sentence btn-primary-action" id="typing-skip-btn" title="Advance to next sentence">Next &rarr;</button>
+              </div>
             </div>
           </div>
           <div class="typing-hint-text">💡 Tip: Type the sentence and press <strong>Enter</strong> to advance. Your progress is <strong>auto-saved</strong> even if you leave. Use <strong>🔄 Reset</strong> to restart from sentence 1.</div>
