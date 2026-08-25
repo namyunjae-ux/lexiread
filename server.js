@@ -150,82 +150,217 @@ function isAuthorBio(text, author) {
   return /^[A-Z][a-z]+(\s+[A-Z][a-z]+)+\s+is\s+(a|an|the|professor|director|founder|co-founder|senior)/.test(text);
 }
 
-async function scrapeGuardianOpinionArticles(count = 5, seenUrls = new Set()) {
-  const rssUrl = 'https://www.theguardian.com/commentisfree/rss';
-  const resp = await axios.get(rssUrl, {
-    headers: { 'User-Agent': 'Mozilla/5.0' },
-    timeout: 10000
-  });
+const CATEGORY_CHANNELS = [
+  {
+    name: 'Culture & Books',
+    tag: 'Culture',
+    feeds: [
+      'https://www.theguardian.com/books/rss',
+      'https://www.theguardian.com/culture/rss'
+    ]
+  },
+  {
+    name: 'Life & Psychology',
+    tag: 'Life',
+    feeds: [
+      'https://www.theguardian.com/lifeandstyle/rss'
+    ]
+  },
+  {
+    name: 'Science & Tech',
+    tag: 'Science',
+    feeds: [
+      'https://www.theguardian.com/science/rss',
+      'https://www.theguardian.com/technology/rss'
+    ]
+  },
+  {
+    name: 'The Long Read',
+    tag: 'Long Read',
+    feeds: [
+      'https://www.theguardian.com/news/series/the-long-read/rss'
+    ]
+  },
+  {
+    name: 'Global Ideas',
+    tag: 'Global',
+    feeds: [
+      'https://www.theguardian.com/commentisfree/rss',
+      'https://www.theguardian.com/world/rss'
+    ]
+  }
+];
 
-  const $ = cheerio.load(resp.data, { xmlMode: true });
-  const items = $('item').toArray();
-  const articles = [];
-
-  for (let i = 0; i < items.length && articles.length < count; i++) {
-    const item = $(items[i]);
-    const rawTitle = item.find('title').text().trim();
-    const link = item.find('link').text().trim();
-    const pubDate = item.find('pubDate').text().trim();
-
-    // Skip previously seen/read articles
-    if (seenUrls.has(link)) {
-      continue;
-    }
-
-    let title = rawTitle;
-    let author = 'Guardian Columnist';
-    if (rawTitle.includes(' | ')) {
-      const parts = rawTitle.split(' | ');
-      title = parts[0].trim();
-      author = parts[parts.length - 1].trim();
-    }
-
+async function scrapeSingleCategoryArticle(channel, seenUrls) {
+  for (const feedUrl of channel.feeds) {
     try {
-      const artResp = await axios.get(link, {
+      const resp = await axios.get(feedUrl, {
         headers: { 'User-Agent': 'Mozilla/5.0' },
         timeout: 10000
       });
-      const art$ = cheerio.load(artResp.data);
+      const $ = cheerio.load(resp.data, { xmlMode: true });
+      const items = $('item').toArray();
 
-      const main = art$('#maincontent, article').first();
-      main.find('aside, figure, figcaption, gu-island, form, button, input, iframe, nav, header, footer, svg, style, script, noscript, [data-component="submeta"], [data-component="newsletter-signup"]').remove();
+      for (const itemEl of items) {
+        const item = $(itemEl);
+        const rawTitle = item.find('title').text().trim();
+        const link = item.find('link').text().trim();
+        const pubDate = item.find('pubDate').text().trim();
 
-      let standfirst = art$('[data-gu-name="standfirst"], .content__standfirst').first().text().trim();
-      if (isBoilerplate(standfirst)) standfirst = '';
-
-      const paragraphs = [];
-      main.find('p').each((_, p) => {
-        const text = art$(p).text().replace(/\s+/g, ' ').trim();
-        if (text.length > 40 && !isBoilerplate(text) && !isAuthorBio(text, author)) {
-          paragraphs.push(text);
+        if (!link || seenUrls.has(link)) continue;
+        const lowerTitle = rawTitle.toLowerCase();
+        if (lowerTitle.includes('video') || lowerTitle.includes('podcast') || lowerTitle.includes('in pictures') || lowerTitle.includes('gallery')) {
+          continue;
         }
-      });
 
-      // Deduplicate if standfirst matches first paragraph
-      if (standfirst && paragraphs.length > 0) {
-        const sNorm = standfirst.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const p0Norm = paragraphs[0].toLowerCase().replace(/[^a-z0-9]/g, '');
-        if (sNorm === p0Norm || p0Norm.startsWith(sNorm) || sNorm.startsWith(p0Norm)) {
-          standfirst = '';
+        let title = rawTitle;
+        let author = 'Guardian Columnist';
+        if (rawTitle.includes(' | ')) {
+          const parts = rawTitle.split(' | ');
+          title = parts[0].trim();
+          author = parts[parts.length - 1].trim();
         }
-      }
 
-      if (paragraphs.length >= 4) {
-        const wordCount = paragraphs.reduce((sum, p) => sum + p.split(/\s+/).length, 0);
-        articles.push({
-          id: `art-${articles.length + 1}-${Buffer.from(title).toString('base64').substring(0, 8)}`,
-          title,
-          author,
-          standfirst,
-          url: link,
-          pubDate,
-          paragraphs,
-          wordCount,
-          estimatedReadingTime: Math.ceil(wordCount / 180)
-        });
+        try {
+          const artResp = await axios.get(link, {
+            headers: { 'User-Agent': 'Mozilla/5.0' },
+            timeout: 10000
+          });
+          const art$ = cheerio.load(artResp.data);
+
+          // Extract real author byline if available
+          const byline = art$('address, [rel="author"], [data-component="meta-byline"]').first().text().trim() || art$('meta[name="author"]').attr('content');
+          if (byline && author === 'Guardian Columnist') {
+            author = byline.replace(/^By\s+/i, '').trim();
+          }
+
+          const main = art$('#maincontent, article').first();
+          main.find('aside, figure, figcaption, gu-island, form, button, input, iframe, nav, header, footer, svg, style, script, noscript, [data-component="submeta"], [data-component="newsletter-signup"]').remove();
+
+          let standfirst = art$('[data-gu-name="standfirst"], .content__standfirst').first().text().trim();
+          if (isBoilerplate(standfirst)) standfirst = '';
+
+          const paragraphs = [];
+          main.find('p').each((_, p) => {
+            const text = art$(p).text().replace(/\s+/g, ' ').trim();
+            if (text.length > 40 && !isBoilerplate(text) && !isAuthorBio(text, author)) {
+              paragraphs.push(text);
+            }
+          });
+
+          // Deduplicate if standfirst matches first paragraph
+          if (standfirst && paragraphs.length > 0) {
+            const sNorm = standfirst.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const p0Norm = paragraphs[0].toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (sNorm === p0Norm || p0Norm.startsWith(sNorm) || sNorm.startsWith(p0Norm)) {
+              standfirst = '';
+            }
+          }
+
+          if (paragraphs.length >= 4) {
+            const wordCount = paragraphs.reduce((sum, p) => sum + p.split(/\s+/).length, 0);
+            return {
+              category: channel.name,
+              categoryTag: channel.tag,
+              title,
+              author,
+              standfirst,
+              url: link,
+              pubDate,
+              paragraphs,
+              wordCount,
+              estimatedReadingTime: Math.ceil(wordCount / 180)
+            };
+          }
+        } catch (err) {
+          // Continue trying other articles in feed
+        }
       }
     } catch (err) {
-      console.error(`Error scraping ${link}:`, err.message);
+      console.error(`Feed ${feedUrl} error:`, err.message);
+    }
+  }
+  return null;
+}
+
+async function scrapeGuardianOpinionArticles(count = 5, seenUrls = new Set()) {
+  const articles = [];
+  const localSeen = new Set(seenUrls);
+
+  for (let i = 0; i < CATEGORY_CHANNELS.length && articles.length < count; i++) {
+    const channel = CATEGORY_CHANNELS[i];
+    const article = await scrapeSingleCategoryArticle(channel, localSeen);
+    if (article) {
+      article.id = `art-${articles.length + 1}-${Buffer.from(article.title).toString('base64').substring(0, 8)}`;
+      localSeen.add(article.url);
+      articles.push(article);
+    }
+  }
+
+  // Failover: If any category failed to return an article, fill up to count from backup feed
+  if (articles.length < count) {
+    try {
+      const backupResp = await axios.get('https://www.theguardian.com/commentisfree/rss', {
+        headers: { 'User-Agent': 'Mozilla/5.0' },
+        timeout: 10000
+      });
+      const $ = cheerio.load(backupResp.data, { xmlMode: true });
+      const items = $('item').toArray();
+
+      for (const itemEl of items) {
+        if (articles.length >= count) break;
+        const link = $(itemEl).find('link').text().trim();
+        if (!link || localSeen.has(link)) continue;
+
+        const rawTitle = $(itemEl).find('title').text().trim();
+        let title = rawTitle;
+        let author = 'Guardian Columnist';
+        if (rawTitle.includes(' | ')) {
+          const parts = rawTitle.split(' | ');
+          title = parts[0].trim();
+          author = parts[parts.length - 1].trim();
+        }
+
+        try {
+          const artResp = await axios.get(link, { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 10000 });
+          const art$ = cheerio.load(artResp.data);
+          const main = art$('#maincontent, article').first();
+          main.find('aside, figure, figcaption, gu-island, form, button, input, iframe, nav, header, footer, svg, style, script, noscript, [data-component="submeta"], [data-component="newsletter-signup"]').remove();
+
+          let standfirst = art$('[data-gu-name="standfirst"], .content__standfirst').first().text().trim();
+          if (isBoilerplate(standfirst)) standfirst = '';
+
+          const paragraphs = [];
+          main.find('p').each((_, p) => {
+            const text = art$(p).text().replace(/\s+/g, ' ').trim();
+            if (text.length > 40 && !isBoilerplate(text) && !isAuthorBio(text, author)) {
+              paragraphs.push(text);
+            }
+          });
+
+          if (paragraphs.length >= 4) {
+            const wordCount = paragraphs.reduce((sum, p) => sum + p.split(/\s+/).length, 0);
+            localSeen.add(link);
+            articles.push({
+              id: `art-${articles.length + 1}-${Buffer.from(title).toString('base64').substring(0, 8)}`,
+              category: 'Global Ideas',
+              categoryTag: 'Global',
+              title,
+              author,
+              standfirst,
+              url: link,
+              pubDate: $(itemEl).find('pubDate').text().trim(),
+              paragraphs,
+              wordCount,
+              estimatedReadingTime: Math.ceil(wordCount / 180)
+            });
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+    } catch (e) {
+      console.error('Backup scraper error:', e.message);
     }
   }
 

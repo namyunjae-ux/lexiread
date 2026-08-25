@@ -454,7 +454,7 @@ function renderSidebarArticles() {
     card.innerHTML = `
       <div class="card-num-row">
         <span class="card-num">
-          COLUMN #${idx + 1}
+          COLUMN #${idx + 1}${art.categoryTag ? ` &bull; ${escapeHTML(art.categoryTag.toUpperCase())}` : ''}
           ${hasMemo ? '<span class="memo-card-indicator" title="Has personal notes">Note</span>' : ''}
         </span>
         <span class="card-checkbox ${isRead ? 'checked' : ''}" title="Click to toggle read status">
@@ -1154,10 +1154,10 @@ function renderMemoColumnSelector() {
     btn.type = 'button';
     btn.className = `memo-col-btn ${isActive ? 'active' : ''}`;
     btn.innerHTML = `
-      <span>Col #${idx + 1}</span>
+      <span>Col #${idx + 1}${art.categoryTag ? ` &bull; ${escapeHTML(art.categoryTag)}` : ''}</span>
       ${hasNote ? '<span class="memo-col-badge">•</span>' : ''}
     `;
-    btn.title = `Column #${idx + 1}: ${art.title}`;
+    btn.title = `Column #${idx + 1} (${art.category || ''}): ${art.title}`;
     btn.addEventListener('click', () => {
       switchMemoToArticle(art.id);
     });
