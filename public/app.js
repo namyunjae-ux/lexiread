@@ -455,10 +455,10 @@ function renderSidebarArticles() {
       <div class="card-num-row">
         <span class="card-num">
           COLUMN #${idx + 1}
-          ${hasMemo ? '<span class="memo-card-indicator" title="Has personal notes">📝 Note</span>' : ''}
+          ${hasMemo ? '<span class="memo-card-indicator" title="Has personal notes">Note</span>' : ''}
         </span>
         <span class="card-checkbox ${isRead ? 'checked' : ''}" title="Click to toggle read status">
-          ${isRead ? '☑ Read' : '☐ Check'}
+          ${isRead ? 'Read' : 'Check'}
         </span>
       </div>
       <h3 class="card-title ${isRead ? 'completed-text' : ''}">${escapeHTML(art.title)}</h3>
@@ -1011,7 +1011,7 @@ function renderCalendar() {
 
     cell.innerHTML = `
       <span class="cal-day-num">${d}</span>
-      ${(!isBeforeLaunch && !isFuture) ? (readCount >= 5 ? '<span class="cal-day-read-count">5/5 ✓</span>' : (readCount > 0 ? `<span class="cal-day-read-count">${readCount}/5</span>` : '')) : ''}
+      ${(!isBeforeLaunch && !isFuture) ? (readCount >= 5 ? '<span class="cal-day-read-count">5/5</span>' : (readCount > 0 ? `<span class="cal-day-read-count">${readCount}/5</span>` : '')) : ''}
     `;
 
     // Clicking a date cell
@@ -1068,7 +1068,7 @@ function handleMemoInput() {
     if (state.user) {
       syncMemoToServer(activeId, val);
     } else {
-      if (memoStatus) memoStatus.textContent = 'Auto-saved locally ✓';
+      if (memoStatus) memoStatus.textContent = 'Auto-saved locally';
     }
     renderSidebarArticles();
     renderMemoColumnSelector();
@@ -1081,9 +1081,9 @@ function syncMemoToServer(articleId, memoText) {
     method: 'POST',
     body: JSON.stringify({ articleId, memo: memoText, memos: state.memos })
   }).then(() => {
-    if (memoStatus) memoStatus.textContent = 'Synced to account ✓';
+    if (memoStatus) memoStatus.textContent = 'Synced to account';
   }).catch(() => {
-    if (memoStatus) memoStatus.textContent = 'Saved locally ✓';
+    if (memoStatus) memoStatus.textContent = 'Saved locally';
   });
 }
 
@@ -1136,7 +1136,7 @@ function switchMemoToArticle(articleId) {
     memoTextarea.value = currentVal;
   }
   if (memoStatus) {
-    memoStatus.textContent = state.user ? 'Synced with account ✓' : 'Auto-saved locally ✓';
+    memoStatus.textContent = state.user ? 'Synced with account' : 'Auto-saved locally';
   }
   updateMemoCharCount();
   renderMemoColumnSelector();
@@ -1155,7 +1155,7 @@ function renderMemoColumnSelector() {
     btn.className = `memo-col-btn ${isActive ? 'active' : ''}`;
     btn.innerHTML = `
       <span>Col #${idx + 1}</span>
-      ${hasNote ? '<span class="memo-col-badge">📝</span>' : ''}
+      ${hasNote ? '<span class="memo-col-badge">•</span>' : ''}
     `;
     btn.title = `Column #${idx + 1}: ${art.title}`;
     btn.addEventListener('click', () => {
@@ -1214,7 +1214,7 @@ function renderAuthSection() {
   if (state.user) {
     authSection.innerHTML = `
       <div style="display:flex; align-items:center; gap:8px;">
-        <span style="font-size:13px; font-weight:600; color:var(--text-headline);">👤 ${escapeHTML(state.user.username)}</span>
+        <span style="font-size:13px; font-weight:600; color:var(--text-headline);">${escapeHTML(state.user.username)}</span>
         <button class="btn btn-outline" id="logout-btn" style="padding:4px 8px; font-size:11px;">Logout</button>
       </div>
     `;

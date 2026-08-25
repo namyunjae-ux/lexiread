@@ -21,7 +21,7 @@
   <title>LexiRead — Global Daily English Column Reader</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Playfair+Display:ital,wght@0,600;0,800;1,400;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,400&family=Playfair+Display:ital,wght@0,600;0,700;0,800;1,400;1,600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="theme-light">
@@ -30,7 +30,6 @@
   <header class="app-header">
     <div class="header-left">
       <div class="brand" id="brand-home">
-        <span class="brand-icon">📖</span>
         <span class="brand-name">LexiRead</span>
         <span class="brand-tag">Daily Opinion</span>
       </div>
@@ -39,23 +38,23 @@
     <div class="header-right">
       <!-- Guide Button -->
       <button class="btn btn-outline" id="open-guide-btn" title="How to use LexiRead Guide">
-        <span>💡 Guide</span>
+        <span>Guide</span>
       </button>
 
       <!-- Calendar Button -->
       <button class="btn btn-outline" id="open-calendar-btn" title="View Reading Calendar">
-        <span>📅 Calendar</span>
+        <span>Calendar</span>
       </button>
 
       <!-- Memo Button -->
       <button class="btn btn-outline" id="open-memo-btn" title="Open Notepad & Memos">
-        <span>📝 Memo</span>
+        <span>Memo</span>
       </button>
 
       <!-- Theme Switcher (Light & Dark) -->
       <div class="theme-controls">
-        <button class="theme-btn active" data-theme="theme-light" title="Light Theme">☀️</button>
-        <button class="theme-btn" data-theme="theme-dark" title="Dark Theme">🌙</button>
+        <button class="theme-btn active" data-theme="theme-light" title="Light Theme">Light</button>
+        <button class="theme-btn" data-theme="theme-dark" title="Dark Theme">Dark</button>
       </div>
 
       <!-- Auth Button / Profile -->
@@ -98,16 +97,16 @@
           <!-- Mode Switcher: Read Mode vs Type Mode -->
           <div class="mode-toggle-group">
             <button class="mode-toggle-btn active" id="mode-read-btn" title="Normal Reading Mode">
-              <span>📖 Read</span>
+              <span>Read</span>
             </button>
             <button class="mode-toggle-btn" id="mode-type-btn" title="Sentence Typing & Transcription Mode">
-              <span>✍️ Type & Study</span>
+              <span>Type & Study</span>
             </button>
           </div>
 
           <!-- Column Memo Trigger -->
           <button class="btn btn-outline" id="reader-memo-btn" title="Write or view notes for this column">
-            <span>📝 Column Memo</span>
+            <span>Column Memo</span>
           </button>
         </div>
 
@@ -148,10 +147,10 @@
           </div>
           <div class="typing-hud-right">
             <button class="btn-listen-sentence" id="typing-speak-btn" title="Listen to current sentence audio">
-              <span>🔊 Listen</span>
+              <span>Listen</span>
             </button>
             <button class="btn-reset-typing" id="typing-reset-btn" title="Reset typing practice from the beginning">
-              <span>🔄 Reset</span>
+              <span>Reset</span>
             </button>
           </div>
         </div>
@@ -169,7 +168,7 @@
             <!-- Bottom Actions Bar -->
             <div class="typing-actions-bar">
               <div class="typing-actions-left">
-                <button class="btn-action-sentence btn-clear-input" id="typing-clear-sentence-btn" title="Clear current input">🗑️ Clear</button>
+                <button class="btn-action-sentence btn-clear-input" id="typing-clear-sentence-btn" title="Clear current input">Clear</button>
               </div>
               <div class="typing-actions-right">
                 <button class="btn-action-sentence" id="typing-prev-btn" title="Go to previous sentence" disabled>&larr; Prev</button>
@@ -177,7 +176,7 @@
               </div>
             </div>
           </div>
-          <div class="typing-hint-text">💡 Tip: Type the sentence and press <strong>Enter</strong> to advance. Your progress is <strong>auto-saved</strong> even if you leave. Use <strong>🔄 Reset</strong> to restart from sentence 1.</div>
+          <div class="typing-hint-text">Tip: Type the sentence and press <strong>Enter</strong> to advance. Your progress is <strong>auto-saved</strong> even if you leave. Use <strong>Reset</strong> to restart from sentence 1.</div>
         </div>
       </section>
     </section>
@@ -189,7 +188,7 @@
     <div class="modal-card calendar-card">
       <div class="modal-header">
         <div class="calendar-title-group">
-          <h2>📅 Reading Activity Calendar</h2>
+          <h2>Reading Activity Calendar</h2>
           <span class="modal-subtitle">Track your daily reading progress & streaks</span>
         </div>
         <button class="modal-close-btn" id="close-calendar-btn">&times;</button>
@@ -221,7 +220,7 @@
     <div class="modal-card guide-card">
       <div class="modal-header">
         <div class="guide-header-title">
-          <h2>💡 How to Use LexiRead</h2>
+          <h2>How to Use LexiRead</h2>
           <div class="modal-subtitle">Master global perspectives and elevate your English proficiency with 5 daily curated columns.</div>
         </div>
         <button class="modal-close-btn" id="close-guide-btn">&times;</button>
@@ -232,7 +231,7 @@
           
           <!-- Step 1 -->
           <div class="guide-step-card">
-            <div class="guide-step-icon">📖</div>
+            <div class="guide-step-icon">01</div>
             <div class="guide-step-content">
               <h3>1. Read 5 Daily Curated Columns</h3>
               <p>Five high-caliber opinion and editorial columns from <em>The Guardian</em> are <strong>automatically published daily at midnight (00:00)</strong>. Choose a column from the sidebar, read thoroughly, and click <strong>[Check]</strong> to fulfill your daily 5/5 reading goal.</p>
@@ -241,32 +240,38 @@
 
           <!-- Step 2 -->
           <div class="guide-step-card">
-            <div class="guide-step-icon">✍️</div>
+            <div class="guide-step-icon">02</div>
             <div class="guide-step-content">
               <h3>2. Sentence Transcription & Typing Practice (Type Mode)</h3>
-              <p>Click <strong>[✍️ Type & Study]</strong> on the toolbar to switch to interactive sentence transcription mode. Listen to native speech audio and type out each sentence to reinforce syntax, rhythm, and intuitive comprehension.</p>
+              <p>Click <strong>[Type & Study]</strong> on the toolbar to switch to interactive sentence transcription mode. Listen to native speech audio and type out each sentence to reinforce syntax, rhythm, and intuitive comprehension.</p>
             </div>
           </div>
 
           <!-- Step 3 -->
-          <div class="guide-step-icon">🔊</div>
-          <div class="guide-step-content">
-            <h3>3. Double-Click for Native Audio Pronunciation</h3>
-            <p>Curious about how a specific word sounds? Simply <strong>double-click (or double-tap on mobile)</strong> any word in the article body to instantly listen to its natural native English pronunciation.</p>
+          <div class="guide-step-card">
+            <div class="guide-step-icon">03</div>
+            <div class="guide-step-content">
+              <h3>3. Double-Click for Native Audio Pronunciation</h3>
+              <p>Curious about how a specific word sounds? Simply <strong>double-click (or double-tap on mobile)</strong> any word in the article body to instantly listen to its natural native English pronunciation.</p>
+            </div>
           </div>
 
           <!-- Step 4 -->
-          <div class="guide-step-icon">📝</div>
-          <div class="guide-step-content">
-            <h3>4. Dedicated Per-Column Notes (Column Memo)</h3>
-            <p>Click <strong>[📝 Column Memo]</strong> to write personal reflections, key vocabulary, and summaries dedicated to each column. Switch smoothly between today's 5 columns using the top selector pills with real-time auto-saving.</p>
+          <div class="guide-step-card">
+            <div class="guide-step-icon">04</div>
+            <div class="guide-step-content">
+              <h3>4. Dedicated Per-Column Notes (Column Memo)</h3>
+              <p>Click <strong>[Column Memo]</strong> to write personal reflections, key vocabulary, and summaries dedicated to each column. Switch smoothly between today's 5 columns using the top selector pills with real-time auto-saving.</p>
+            </div>
           </div>
 
           <!-- Step 5 -->
-          <div class="guide-step-icon">📅</div>
-          <div class="guide-step-content">
-            <h3>5. Reading Calendar & Cloud Synchronization</h3>
-            <p>Open <strong>[📅 Calendar]</strong> to review past columns and track your reading consistency. <strong>[Sign In]</strong> to seamlessly synchronize your per-column memos and streak progress across all your devices.</p>
+          <div class="guide-step-card">
+            <div class="guide-step-icon">05</div>
+            <div class="guide-step-content">
+              <h3>5. Reading Calendar & Cloud Synchronization</h3>
+              <p>Open <strong>[Calendar]</strong> to review past columns and track your reading consistency. <strong>[Sign In]</strong> to seamlessly synchronize your per-column memos and streak progress across all your devices.</p>
+            </div>
           </div>
 
         </div>
@@ -286,8 +291,8 @@
     <div class="modal-card memo-card">
       <div class="modal-header">
         <div class="memo-header-info">
-          <h2>📝 Column Memo</h2>
-          <div class="memo-target-column" id="memo-target-column">📌 <span id="memo-column-title">Select a column</span></div>
+          <h2>Column Memo</h2>
+          <div class="memo-target-column" id="memo-target-column"><span id="memo-column-title">Select a column</span></div>
         </div>
         <button class="modal-close-btn" id="close-memo-btn">&times;</button>
       </div>
