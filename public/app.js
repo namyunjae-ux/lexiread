@@ -62,9 +62,11 @@ const typingCanvas = document.getElementById('typing-canvas');
 const typingStepBadge = document.getElementById('typing-step-badge');
 const typingProgressFill = document.getElementById('typing-progress-fill');
 const typingSpeakBtn = document.getElementById('typing-speak-btn');
+const typingResetBtn = document.getElementById('typing-reset-btn');
 const typingActiveBox = document.getElementById('typing-active-box');
 const typingTargetDisplay = document.getElementById('typing-target-display');
 const typingInputField = document.getElementById('typing-input-field');
+const typingClearSentenceBtn = document.getElementById('typing-clear-sentence-btn');
 const typingPrevBtn = document.getElementById('typing-prev-btn');
 const typingSkipBtn = document.getElementById('typing-skip-btn');
 
@@ -230,6 +232,7 @@ function setupEventListeners() {
 
   // Typing Input listener
   if (typingInputField) {
+    typingInputField.addEventListener('input', handleTypingInput);
     typingInputField.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -240,6 +243,8 @@ function setupEventListeners() {
   if (typingPrevBtn) typingPrevBtn.addEventListener('click', goToPreviousSentence);
   if (typingSkipBtn) typingSkipBtn.addEventListener('click', advanceToNextSentence);
   if (typingSpeakBtn) typingSpeakBtn.addEventListener('click', speakCurrentTypingSentence);
+  if (typingResetBtn) typingResetBtn.addEventListener('click', resetColumnTypingPractice);
+  if (typingClearSentenceBtn) typingClearSentenceBtn.addEventListener('click', clearCurrentTypingSentence);
 
   // Return to Today Button
   if (returnTodayBtn) {
@@ -581,6 +586,42 @@ function switchReaderMode(mode) {
 // ----------------------------------------------------
 // SENTENCE TYPING & TRANSCRIPTION (따라쓰기 / 필사)
 // ----------------------------------------------------
+function getLocalTypingProgressMap() {
+  try {
+    return JSON.parse(localStorage.getItem('lexiread_typing_progress') || '{}');
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveLocalTypingProgressMap(map) {
+  try {
+    localStorage.setItem('lexiread_typing_progress', JSON.stringify(map));
+  } catch (e) {
+    console.error('Failed to save typing progress:', e);
+  }
+}
+
+function getArticleTypingProgress(articleId) {
+  if (!articleId) return { currentIndex: 0, userInputs: {} };
+  const map = getLocalTypingProgressMap();
+  return map[articleId] || { currentIndex: 0, userInputs: {} };
+}
+
+function saveArticleTypingProgress(articleId, progress) {
+  if (!articleId) return;
+  const map = getLocalTypingProgressMap();
+  map[articleId] = progress;
+  saveLocalTypingProgressMap(map);
+}
+
+function resetArticleTypingProgress(articleId) {
+  if (!articleId) return;
+  const map = getLocalTypingProgressMap();
+  delete map[articleId];
+  saveLocalTypingProgressMap(map);
+}
+
 function extractSentencesForArticle(article) {
   if (!article || !article.paragraphs) {
     state.typing.sentences = [];
@@ -602,18 +643,26 @@ function extractSentencesForArticle(article) {
 }
 
 function startTypingSession() {
+  if (!state.currentArticle) return;
   if (!state.typing.sentences || state.typing.sentences.length === 0) {
-    if (state.currentArticle) {
-      extractSentencesForArticle(state.currentArticle);
-    }
+    extractSentencesForArticle(state.currentArticle);
   }
 
-  state.typing.currentIndex = 0;
+  const total = state.typing.sentences.length;
+  const saved = getArticleTypingProgress(state.currentArticle.id);
+  let resumeIdx = (typeof saved.currentIndex === 'number' && saved.currentIndex >= 0) ? saved.currentIndex : 0;
+  if (total > 0 && resumeIdx >= total) {
+    resumeIdx = total - 1;
+  }
+
+  state.typing.currentIndex = resumeIdx;
+  state.typing.userInputs = saved.userInputs || {};
+
   if (typingActiveBox) typingActiveBox.style.display = 'flex';
 
   renderCurrentTypingSentence();
   if (typingInputField) {
-    typingInputField.value = '';
+    typingInputField.value = state.typing.userInputs[resumeIdx] || '';
     setTimeout(() => typingInputField.focus(), 100);
   }
 }
@@ -621,6 +670,8 @@ function startTypingSession() {
 function renderCurrentTypingSentence() {
   const total = state.typing.sentences.length;
   const currIdx = state.typing.currentIndex;
+
+  if (total === 0) return;
 
   if (currIdx >= total) {
     finishTypingSession();
@@ -634,7 +685,7 @@ function renderCurrentTypingSentence() {
   const pct = Math.round(((currIdx + 1) / total) * 100);
   if (typingProgressFill) typingProgressFill.style.width = `${pct}%`;
 
-  // Clean, non-distracting readable plain text display
+  // Clean, readable plain text display
   if (typingTargetDisplay) {
     typingTargetDisplay.textContent = targetSentence;
   }
@@ -643,6 +694,18 @@ function renderCurrentTypingSentence() {
   if (typingPrevBtn) {
     typingPrevBtn.disabled = (currIdx === 0);
   }
+}
+
+function handleTypingInput() {
+  if (!state.currentArticle || !typingInputField) return;
+  const currIdx = state.typing.currentIndex;
+  if (!state.typing.userInputs) state.typing.userInputs = {};
+  state.typing.userInputs[currIdx] = typingInputField.value;
+
+  saveArticleTypingProgress(state.currentArticle.id, {
+    currentIndex: currIdx,
+    userInputs: state.typing.userInputs
+  });
 }
 
 function handleSentenceEnterAdvance(e) {
@@ -655,28 +718,89 @@ function handleSentenceEnterAdvance(e) {
 
 function goToPreviousSentence() {
   if (state.typing.currentIndex > 0) {
-    state.typing.currentIndex -= 1;
-    if (typingInputField) {
-      typingInputField.value = '';
+    // Save current input before moving
+    if (typingInputField && state.currentArticle) {
+      if (!state.typing.userInputs) state.typing.userInputs = {};
+      state.typing.userInputs[state.typing.currentIndex] = typingInputField.value;
     }
+
+    state.typing.currentIndex -= 1;
+
+    if (state.currentArticle) {
+      saveArticleTypingProgress(state.currentArticle.id, {
+        currentIndex: state.typing.currentIndex,
+        userInputs: state.typing.userInputs || {}
+      });
+    }
+
     renderCurrentTypingSentence();
-    if (typingInputField) typingInputField.focus();
+
+    if (typingInputField) {
+      typingInputField.value = (state.typing.userInputs && state.typing.userInputs[state.typing.currentIndex]) || '';
+      typingInputField.focus();
+    }
   }
 }
 
 function advanceToNextSentence() {
-  state.typing.currentIndex += 1;
-  if (typingInputField) {
-    typingInputField.value = '';
+  const total = state.typing.sentences.length;
+
+  // Save current input before moving
+  if (typingInputField && state.currentArticle) {
+    if (!state.typing.userInputs) state.typing.userInputs = {};
+    state.typing.userInputs[state.typing.currentIndex] = typingInputField.value;
   }
 
-  const total = state.typing.sentences.length;
+  state.typing.currentIndex += 1;
+
   if (state.typing.currentIndex < total) {
+    if (state.currentArticle) {
+      saveArticleTypingProgress(state.currentArticle.id, {
+        currentIndex: state.typing.currentIndex,
+        userInputs: state.typing.userInputs || {}
+      });
+    }
+
     renderCurrentTypingSentence();
-    if (typingInputField) typingInputField.focus();
+
+    if (typingInputField) {
+      typingInputField.value = (state.typing.userInputs && state.typing.userInputs[state.typing.currentIndex]) || '';
+      typingInputField.focus();
+    }
   } else {
     finishTypingSession();
   }
+}
+
+function clearCurrentTypingSentence() {
+  if (!typingInputField) return;
+  typingInputField.value = '';
+  const currIdx = state.typing.currentIndex;
+  if (state.typing.userInputs) {
+    state.typing.userInputs[currIdx] = '';
+  }
+  if (state.currentArticle) {
+    saveArticleTypingProgress(state.currentArticle.id, {
+      currentIndex: currIdx,
+      userInputs: state.typing.userInputs || {}
+    });
+  }
+  typingInputField.focus();
+  showToast('Sentence input cleared');
+}
+
+function resetColumnTypingPractice() {
+  if (!state.currentArticle) return;
+  resetArticleTypingProgress(state.currentArticle.id);
+  state.typing.currentIndex = 0;
+  state.typing.userInputs = {};
+
+  renderCurrentTypingSentence();
+  if (typingInputField) {
+    typingInputField.value = '';
+    typingInputField.focus();
+  }
+  showToast('Typing practice reset to Sentence 1');
 }
 
 function speakCurrentTypingSentence() {
@@ -688,10 +812,7 @@ function speakCurrentTypingSentence() {
 }
 
 function finishTypingSession() {
-  showToast('🎉 All sentences in this column transcribed! Returning to reading mode.');
-  setTimeout(() => {
-    switchReaderMode('read');
-  }, 1200);
+  showToast('🎉 All sentences in this column transcribed! Excellent work.');
 }
 
 // ----------------------------------------------------
