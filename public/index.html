@@ -35,6 +35,11 @@
     </div>
 
     <div class="header-right">
+      <!-- Guide Button -->
+      <button class="btn btn-outline" id="open-guide-btn" title="How to use LexiRead Guide">
+        <span>💡 Guide</span>
+      </button>
+
       <!-- Calendar Button -->
       <button class="btn btn-outline" id="open-calendar-btn" title="View Reading Calendar">
         <span>📅 Calendar</span>
@@ -195,6 +200,71 @@
         <div class="legend-item"><span class="legend-dot dot-none"></span> 0 read</div>
         <div class="legend-item"><span class="legend-dot dot-part"></span> 1-4 read</div>
         <div class="legend-item"><span class="legend-dot dot-full"></span> 5/5 all completed!</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- USER GUIDE / HOW TO USE MODAL -->
+  <div class="modal-overlay" id="guide-modal" style="display: none;">
+    <div class="modal-card guide-card">
+      <div class="modal-header">
+        <div class="guide-header-title">
+          <h2>💡 LexiRead 사용 가이드</h2>
+          <div class="modal-subtitle">매일 5편의 영문 시사 칼럼으로 영어 실력과 시사 안목을 키우는 최적의 학습법</div>
+        </div>
+        <button class="modal-close-btn" id="close-guide-btn">&times;</button>
+      </div>
+
+      <div class="guide-body">
+        <div class="guide-step-grid">
+          
+          <!-- Step 1 -->
+          <div class="guide-step-card">
+            <div class="guide-step-icon">📖</div>
+            <div class="guide-step-content">
+              <h3>1. 매일 5편의 엄선된 칼럼 읽기</h3>
+              <p>The Guardian의 최고급 시사·오피니언 칼럼 5편이 <strong>매일 자정(00:00) 자동 업데이트</strong>됩니다. 좌측 목록에서 칼럼을 선택하여 읽고, 완독 후 <strong>[Check]</strong>를 눌러 매일 5/5 진도율을 완성해보세요.</p>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="guide-step-card">
+            <div class="guide-step-icon">✍️</div>
+            <div class="guide-step-content">
+              <h3>2. 문장 필사 & 타이핑 훈련 (Type Mode)</h3>
+              <p>상단 툴바의 <strong>[✍️ Type & Study]</strong>를 누르면 문장별 필사 모드로 전환됩니다. 원어민 음성을 들으며 키보드로 직접 영문장을 타이핑하여 <strong>어순 감각과 직독직해 능력</strong>을 극대화할 수 있습니다.</p>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="guide-step-icon">🔊</div>
+          <div class="guide-step-content">
+            <h3>3. 단어 더블클릭 원어민 발음 듣기</h3>
+            <p>본문을 읽다가 발음이 궁금한 단어나 표현이 있으면 <strong>해당 단어를 더블클릭(모바일은 더블 탭)</strong>하세요. 즉시 자연스러운 원어민 미국식 발음이 재생됩니다.</p>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="guide-step-icon">📝</div>
+          <div class="guide-step-content">
+            <h3>4. 칼럼별 맞춤 메모장 (Column Memo)</h3>
+            <p>툴바의 <strong>[📝 Column Memo]</strong>를 눌러 칼럼마다 나만의 생각, 핵심 어휘, 번역 노트를 기록하세요. 상단 탭으로 오늘자 5개 칼럼의 메모를 자유롭게 전환하며 작성할 수 있으며 자동 저장됩니다.</p>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="guide-step-icon">📅</div>
+          <div class="guide-step-content">
+            <h3>5. 출석 달력 & 계정 클라우드 동기화</h3>
+            <p><strong>[📅 Calendar]</strong>를 열어 출석 스트릭과 지난 날짜의 칼럼을 복습할 수 있습니다. <strong>[Sign In]</strong>으로 로그인하시면 모든 칼럼별 메모와 학습 진도가 다른 PC·스마트폰과 실시간 동기화됩니다.</p>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="guide-footer">
+        <label class="guide-dont-show">
+          <input type="checkbox" id="guide-dismiss-checkbox"> 다음 접속 시 자동 표시하지 않기
+        </label>
+        <button class="btn btn-primary" id="guide-confirm-btn">시작하기 &rarr;</button>
       </div>
     </div>
   </div>

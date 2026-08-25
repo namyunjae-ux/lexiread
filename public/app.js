@@ -68,6 +68,13 @@ const typingInputField = document.getElementById('typing-input-field');
 const typingPrevBtn = document.getElementById('typing-prev-btn');
 const typingSkipBtn = document.getElementById('typing-skip-btn');
 
+// USER GUIDE ELEMENTS
+const guideModal = document.getElementById('guide-modal');
+const openGuideBtn = document.getElementById('open-guide-btn');
+const closeGuideBtn = document.getElementById('close-guide-btn');
+const guideConfirmBtn = document.getElementById('guide-confirm-btn');
+const guideDismissCheckbox = document.getElementById('guide-dismiss-checkbox');
+
 // CALENDAR ELEMENTS
 const calendarModal = document.getElementById('calendar-modal');
 const openCalendarBtn = document.getElementById('open-calendar-btn');
@@ -185,11 +192,38 @@ document.addEventListener('DOMContentLoaded', async () => {
     await loadUserData();
   }
 
+  // Check if first-time visitor and prompt guide modal
+  if (localStorage.getItem('lexiread_guide_dismissed') !== 'true') {
+    setTimeout(() => {
+      if (guideModal) guideModal.style.display = 'flex';
+    }, 400);
+  }
+
   // Start live day-change watcher
   startMidnightWatcher();
 });
 
+function closeUserGuideModal() {
+  if (guideDismissCheckbox && guideDismissCheckbox.checked) {
+    localStorage.setItem('lexiread_guide_dismissed', 'true');
+  }
+  if (guideModal) guideModal.style.display = 'none';
+}
+
 function setupEventListeners() {
+  // Guide Modal triggers
+  if (openGuideBtn) {
+    openGuideBtn.addEventListener('click', () => {
+      if (guideModal) guideModal.style.display = 'flex';
+    });
+  }
+  if (closeGuideBtn) {
+    closeGuideBtn.addEventListener('click', closeUserGuideModal);
+  }
+  if (guideConfirmBtn) {
+    guideConfirmBtn.addEventListener('click', closeUserGuideModal);
+  }
+
   // Mode Switchers
   if (modeReadBtn) modeReadBtn.addEventListener('click', () => switchReaderMode('read'));
   if (modeTypeBtn) modeTypeBtn.addEventListener('click', () => switchReaderMode('type'));
@@ -303,6 +337,7 @@ function setupEventListeners() {
 
   // Close modals on outside click
   document.addEventListener('click', (e) => {
+    if (e.target === guideModal) closeUserGuideModal();
     if (e.target === calendarModal) calendarModal.style.display = 'none';
     if (e.target === memoModal) memoModal.style.display = 'none';
     if (e.target === authModal) authModal.style.display = 'none';
