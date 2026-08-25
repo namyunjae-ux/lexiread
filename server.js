@@ -13,6 +13,38 @@ const JWT_SECRET = process.env.JWT_SECRET || 'daily-english-reader-secret-key-20
 
 app.use(cors());
 app.use(express.json());
+
+// ----------------------------------------------------
+// DYNAMIC SEO & SITEMAP ROUTES (Google Search Console)
+// ----------------------------------------------------
+app.get('/robots.txt', (req, res) => {
+  const host = req.get('host') || 'lexiread-app.onrender.com';
+  const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const baseUrl = `${protocol}://${host}`;
+  res.type('text/plain; charset=utf-8');
+  res.send(`User-agent: *\nAllow: /\n\nSitemap: ${baseUrl}/sitemap.xml\n`);
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  const host = req.get('host') || 'lexiread-app.onrender.com';
+  const protocol = req.secure || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+  const baseUrl = `${protocol}://${host}`;
+  const today = getTodayLocalDate();
+
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${baseUrl}/</loc>
+    <lastmod>${today}</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>`;
+
+  res.type('application/xml; charset=utf-8');
+  res.send(xml);
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // DATA STORAGE (JSON File Database)
