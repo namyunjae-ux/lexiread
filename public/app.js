@@ -1237,6 +1237,11 @@ async function handleLoginSubmit(e) {
     state.user = data.user;
     localStorage.setItem('lexiread_token', data.token);
 
+    // Google Analytics event
+    if (typeof gtag === 'function') {
+      gtag('event', 'login', { method: 'LexiRead' });
+    }
+
     if (authModal) authModal.style.display = 'none';
     renderAuthSection();
     await loadUserData();
@@ -1268,6 +1273,11 @@ async function handleRegisterSubmit(e) {
     state.token = data.token;
     state.user = data.user;
     localStorage.setItem('lexiread_token', data.token);
+
+    // Google Analytics event
+    if (typeof gtag === 'function') {
+      gtag('event', 'sign_up', { method: 'LexiRead' });
+    }
 
     if (authModal) authModal.style.display = 'none';
     renderAuthSection();

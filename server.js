@@ -498,6 +498,29 @@ app.post('/api/user/toggle-read-article', authMiddleware, (req, res) => {
   });
 });
 
+// ----------------------------------------------------
+// REST APIS: ADMIN & USER STATS
+// ----------------------------------------------------
+app.get('/api/admin/stats', (req, res) => {
+  const users = loadJSON(USERS_FILE, []);
+  const streaks = loadJSON(STREAKS_FILE, {});
+  const memos = loadJSON(MEMOS_FILE, {});
+
+  const sanitizedUsers = users.map(u => ({
+    username: u.username,
+    email: u.email,
+    joinedAt: u.createdAt
+  }));
+
+  res.json({
+    totalRegisteredUsers: users.length,
+    users: sanitizedUsers,
+    activeStreakUsersCount: Object.keys(streaks).length,
+    usersWithMemosCount: Object.keys(memos).length,
+    serverTime: new Date().toISOString()
+  });
+});
+
 // START SERVER
 app.listen(PORT, async () => {
   console.log(`\n======================================================`);
