@@ -629,14 +629,48 @@ function extractSentencesForArticle(article) {
   }
 
   const sentences = [];
+
   article.paragraphs.forEach(p => {
-    const matched = p.match(/[^.!?]+[.!?]+["'”]?|[^.!?]+$/g) || [];
-    matched.forEach(s => {
-      const trimmed = s.trim().replace(/\s+/g, ' ');
-      if (trimmed.length >= 10) {
+    if (!p || typeof p !== 'string') return;
+    const clean = p.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!clean) return;
+
+    const protectedMap = new Map();
+    let placeholderCounter = 0;
+
+    function protect(str) {
+      const key = `___PROT_${placeholderCounter++}___`;
+      protectedMap.set(key, str);
+      return key;
+    }
+
+    // 1. Protect currency / decimal numbers (e.g. £9.5m, $10.2bn, 3.14, 99.9%, 0.5)
+    let safeText = clean.replace(/([£$€¥₩]?\d+)\.(\d+([a-zA-Z%]+)?)/g, (match) => protect(match));
+
+    // 2. Protect common abbreviations & titles
+    const abbrRegex = /\b(Mr|Mrs|Ms|Dr|Prof|St|Gov|Sen|Rep|Gen|Lt|Col|Capt|Pres|Rev|Fr|Hon|Amb|Jr|Sr|vs|etc|e\.g|i\.e|approx|dept|fig|no|vol|inc|corp|co|ltd|al|cf|ed|pp|Ph\.D|M\.D|B\.A|B\.S|M\.A|M\.S|U\.S|U\.K|U\.N|E\.U|P\.S|A\.M|P\.M|B\.C|A\.D|a\.m|p\.m|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\./gi;
+    safeText = safeText.replace(abbrRegex, (match) => protect(match));
+
+    // 3. Protect single-letter initials like "J. K. Rowling" or "John F. Kennedy"
+    safeText = safeText.replace(/\b([A-Z])\./g, (match) => protect(match));
+
+    // 4. Protect ellipsis (...)
+    safeText = safeText.replace(/\.{3,}/g, (match) => protect(match));
+
+    // 5. Split on real sentence boundary punctuation (. ! ?)
+    const sentenceBoundaryRegex = /([^.!?]+[.!?]+["'”’»)]?|[^.!?]+$)/g;
+    const matches = safeText.match(sentenceBoundaryRegex) || [];
+
+    for (let s of matches) {
+      // Restore protected placeholders
+      for (const [key, orig] of protectedMap.entries()) {
+        s = s.replaceAll(key, orig);
+      }
+      const trimmed = s.trim();
+      if (trimmed.length >= 5) {
         sentences.push(trimmed);
       }
-    });
+    }
   });
 
   state.typing.sentences = sentences;
