@@ -33,7 +33,8 @@ let state = {
     currentIndex: 0
   },
   memos: loadLocalMemosMap(),
-  activeMemoArticleId: null
+  activeMemoArticleId: null,
+  showTranslation: localStorage.getItem('lexiread_show_translation') !== 'false'
 };
 
 // DOM ELEMENTS
@@ -43,6 +44,8 @@ const issueDateLabel = document.getElementById('issue-date-label');
 const returnTodayBtn = document.getElementById('return-today-btn');
 const canvasHeadline = document.getElementById('canvas-headline');
 const canvasAuthor = document.getElementById('canvas-author');
+const toggleTranslationBtn = document.getElementById('toggle-translation-btn');
+const toggleTranslationText = document.getElementById('toggle-translation-text');
 const canvasStandfirst = document.getElementById('canvas-standfirst');
 const canvasBody = document.getElementById('canvas-body');
 const articleCanvas = document.getElementById('article-canvas');
@@ -320,6 +323,15 @@ function setupEventListeners() {
     memoTextarea.addEventListener('input', handleMemoInput);
   }
 
+  // Translation Visibility Toggle
+  if (toggleTranslationBtn) {
+    toggleTranslationBtn.addEventListener('click', () => {
+      state.showTranslation = !state.showTranslation;
+      localStorage.setItem('lexiread_show_translation', state.showTranslation ? 'true' : 'false');
+      updateTranslationVisibility();
+    });
+  }
+
   // Auth Modal
   if (closeAuthBtn) {
     closeAuthBtn.addEventListener('click', () => {
@@ -501,7 +513,11 @@ function selectArticle(article) {
     if (sNorm === p0Norm || p0Norm.startsWith(sNorm) || sNorm.startsWith(p0Norm)) {
       canvasStandfirst.style.display = 'none';
     } else {
-      canvasStandfirst.textContent = article.standfirst;
+      let sfHtml = `<div class="canvas-standfirst-en">${escapeHTML(article.standfirst)}</div>`;
+      if (article.standfirstKo) {
+        sfHtml += `<div class="canvas-standfirst-ko">${escapeHTML(article.standfirstKo)}</div>`;
+      }
+      canvasStandfirst.innerHTML = sfHtml;
       canvasStandfirst.style.display = 'block';
     }
   } else if (canvasStandfirst) {
@@ -511,15 +527,32 @@ function selectArticle(article) {
   // Update read button
   updateMarkReadButtonState();
 
-  // Render clean text paragraphs
+  // Render clean text paragraphs with 1:1 Korean translation underneath
   if (canvasBody) {
     canvasBody.innerHTML = '';
-    article.paragraphs.forEach(para => {
-      const pEl = document.createElement('p');
-      pEl.textContent = para;
-      canvasBody.appendChild(pEl);
+    const hasKo = Array.isArray(article.paragraphsKo) && article.paragraphsKo.length > 0;
+
+    article.paragraphs.forEach((para, idx) => {
+      const pair = document.createElement('div');
+      pair.className = 'paragraph-pair';
+
+      const pEn = document.createElement('p');
+      pEn.className = 'canvas-paragraph-en';
+      pEn.textContent = para;
+      pair.appendChild(pEn);
+
+      if (hasKo && article.paragraphsKo[idx]) {
+        const pKo = document.createElement('p');
+        pKo.className = 'canvas-paragraph-ko';
+        pKo.textContent = article.paragraphsKo[idx];
+        pair.appendChild(pKo);
+      }
+
+      canvasBody.appendChild(pair);
     });
   }
+
+  updateTranslationVisibility();
 
   // Initialize sentences for Typing Practice Mode
   extractSentencesForArticle(article);
@@ -529,6 +562,26 @@ function selectArticle(article) {
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateTranslationVisibility() {
+  const hasTranslations = state.currentArticle && Array.isArray(state.currentArticle.paragraphsKo) && state.currentArticle.paragraphsKo.length > 0;
+  if (toggleTranslationBtn) {
+    if (!hasTranslations) {
+      toggleTranslationBtn.style.display = 'none';
+    } else {
+      toggleTranslationBtn.style.display = 'inline-flex';
+      toggleTranslationBtn.classList.toggle('active', state.showTranslation);
+      if (toggleTranslationText) {
+        toggleTranslationText.textContent = state.showTranslation ? 'Hide Translation' : 'Show Translation';
+      }
+    }
+  }
+
+  const koElements = document.querySelectorAll('.canvas-paragraph-ko, .canvas-standfirst-ko');
+  koElements.forEach(el => {
+    el.style.display = state.showTranslation ? 'block' : 'none';
+  });
 }
 
 function updateMarkReadButtonState() {

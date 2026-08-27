@@ -2,3 +2,9 @@ node_modules/
 .DS_Store
 .env
 npm-debug.log*
+__pycache__/
+*.pyc
+batch_*.py
+add_translations.py
+target_articles_*.json
+unique_articles_*.json
