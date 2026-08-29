@@ -601,24 +601,12 @@ body {
 .canvas-standfirst {
   font-family: var(--font-serif);
   font-size: 17px;
+  font-style: italic;
   line-height: 1.65;
   color: var(--text-main);
   margin-bottom: 36px;
   padding-left: 18px;
   border-left: 3px solid var(--text-headline);
-}
-
-.canvas-standfirst-en {
-  font-style: italic;
-  margin-bottom: 6px;
-}
-
-.canvas-standfirst-ko {
-  font-family: var(--font-sans);
-  font-size: 14.5px;
-  font-style: normal;
-  color: var(--text-muted);
-  line-height: 1.6;
 }
 
 .canvas-body {
@@ -629,46 +617,12 @@ body {
   user-select: text;
 }
 
-.paragraph-pair {
-  margin-bottom: 30px;
-}
-
-.paragraph-pair:last-child {
-  margin-bottom: 0;
-}
-
-.canvas-paragraph-en {
-  font-family: var(--font-serif);
-  font-size: inherit;
-  line-height: 1.85;
-  color: var(--text-main);
-  margin-bottom: 8px;
-}
-
-.canvas-paragraph-ko {
-  font-family: var(--font-sans);
-  font-size: 0.9em;
-  line-height: 1.78;
-  color: var(--text-muted);
-  background: var(--bg-app);
-  padding: 10px 16px;
-  border-radius: 6px;
-  border-left: 3px solid var(--border-color);
-  margin-bottom: 0;
-  transition: border-color var(--transition-fast), color var(--transition-fast);
-}
-
-.canvas-paragraph-ko:hover {
-  border-left-color: var(--text-headline);
-  color: var(--text-main);
-}
-
-.canvas-body > p {
+.canvas-body p {
   margin-bottom: 26px;
   text-indent: 1.2em;
 }
 
-.canvas-body > p:first-child {
+.canvas-body p:first-child {
   text-indent: 0;
 }
 
