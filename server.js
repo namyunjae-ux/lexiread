@@ -94,10 +94,10 @@ function authMiddleware(req, res, next) {
 }
 
 // ----------------------------------------------------
-// ARTICLE SCRAPER (The Guardian Opinion with Deduplication)
+// ARTICLE SCRAPER (Strict Quality & Ad-Free Curation)
 // ----------------------------------------------------
 const BOILERPLATE_PATTERNS = [
-  /^sign up to/i,
+  /^sign up (?:to|for)/i,
   /^free newsletter/i,
   /^enter your email/i,
   /guardian columnists and writers on what they/i,
@@ -133,7 +133,93 @@ const BOILERPLATE_PATTERNS = [
   /this article was amended on/i,
   /this piece was amended on/i,
   /in the uk and ireland.*helpline/i,
-  /in the us.*helpline/i
+  /in the us.*helpline/i,
+  /last chance to buy/i,
+  /buy your copy here/i,
+  /click here to order/i,
+  /click here to buy/i,
+  /other pieces you might enjoy from/i,
+  /the filter, the guardian['\x27]s guide to buying/i,
+  /the filter us newsletter/i,
+  /support the guardian/i,
+  /we may earn a commission/i,
+  /this article contains affiliate links/i,
+  /affiliate link/i,
+  /read more:/i,
+  /related:/i
+];
+
+const BLOCKED_URL_PATTERNS = [
+  /\/thefilter/i,
+  /\/fashion\//i,
+  /\/food\//i,
+  /\/recipes\//i,
+  /\/shopping\//i,
+  /\/money\/consumer/i,
+  /\/money\/property/i,
+  /\/money\/investing/i,
+  /\/crosswords\//i,
+  /\/games\//i,
+  /\/audio\//i,
+  /\/video\//i,
+  /\/gallery\//i,
+  /\/in-pictures\//i,
+  /\/live\//i,
+  /\/liveblog\//i,
+  /\/discover-/i,
+  /\/advertisement/i,
+  /\/sponsored/i,
+  /\/sign-up-to-/i,
+  /\/newsletter-/i,
+  /best-[a-z0-9-]+-deals/i,
+  /best-[a-z0-9-]+-to-buy/i,
+  /best-running-shoes/i,
+  /how-to-buy-/i,
+  /which-is-best-/i,
+  /gift-guide/i
+];
+
+const BLOCKED_TITLE_PATTERNS = [
+  /\bdeals\b/i,
+  /\bbargains?\b/i,
+  /\bshopping guide\b/i,
+  /\bbuying guide\b/i,
+  /\btested and reviewed\b/i,
+  /\bwhere to buy\b/i,
+  /\bgift guide\b/i,
+  /\bbest .* to buy\b/i,
+  /\bhow to choose the best\b/i,
+  /\bfind(?:ing)? the perfect shoe\b/i,
+  /\bblack friday\b/i,
+  /\bprime day\b/i,
+  /\bdiscount\b/i,
+  /\bcoupon\b/i,
+  /\bpromo code\b/i,
+  /\baffiliate\b/i,
+  /^(?:sign up to|subscribe to|download the|listen to|watch)\b/i,
+  /\bnewsletter\b/i,
+  /^(?:letters?|letters to the editor)\b/i,
+  /\|\s*letters?$/i,
+  /–\s*podcast$/i,
+  /–\s*video$/i,
+  /\|\s*audio$/i,
+  /\bin pictures\b/i,
+  /\bgallery\b/i,
+  /\bquiz\b/i,
+  /\bcrossword\b/i,
+  /\blive\b/i,
+  /\bliveblog\b/i,
+  /\bblind date\b/i,
+  /\byou be the judge\b/i
+];
+
+const BLOCKED_AUTHORS = [
+  'letters',
+  'letters to the editor',
+  'guardian staff',
+  'observer food monthly',
+  '10 writers',
+  'various'
 ];
 
 function isBoilerplate(text) {
@@ -144,7 +230,7 @@ function isBoilerplate(text) {
 function isAuthorBio(text, author) {
   if (!text) return false;
   const t = text.toLowerCase();
-  const a = author.toLowerCase();
+  const a = (author || '').toLowerCase();
   const bioWords = [' is a ', ' is an ', ' is professor', ' is the author of', ' is founder of', 'columnist at', 'is a lawyer', 'is a journalist', 'is a writer', 'is a senior fellow'];
   if (a && t.includes(a) && bioWords.some(w => t.includes(w))) return true;
   return /^[A-Z][a-z]+(\s+[A-Z][a-z]+)+\s+is\s+(a|an|the|professor|director|founder|co-founder|senior)/.test(text);
@@ -163,7 +249,9 @@ const CATEGORY_CHANNELS = [
     name: 'Life & Psychology',
     tag: 'Life',
     feeds: [
-      'https://www.theguardian.com/lifeandstyle/rss'
+      'https://www.theguardian.com/lifeandstyle/relationships/rss',
+      'https://www.theguardian.com/lifeandstyle/health-and-wellbeing/rss',
+      'https://www.theguardian.com/lifeandstyle/women/rss'
     ]
   },
   {
@@ -208,10 +296,8 @@ async function scrapeSingleCategoryArticle(channel, seenUrls) {
         const pubDate = item.find('pubDate').text().trim();
 
         if (!link || seenUrls.has(link)) continue;
-        const lowerTitle = rawTitle.toLowerCase();
-        if (lowerTitle.includes('video') || lowerTitle.includes('podcast') || lowerTitle.includes('in pictures') || lowerTitle.includes('gallery')) {
-          continue;
-        }
+        if (BLOCKED_URL_PATTERNS.some(pat => pat.test(link))) continue;
+        if (BLOCKED_TITLE_PATTERNS.some(pat => pat.test(rawTitle))) continue;
 
         let title = rawTitle;
         let author = 'Guardian Columnist';
@@ -220,6 +306,9 @@ async function scrapeSingleCategoryArticle(channel, seenUrls) {
           title = parts[0].trim();
           author = parts[parts.length - 1].trim();
         }
+
+        const lowerAuthor = author.toLowerCase().trim();
+        if (BLOCKED_AUTHORS.includes(lowerAuthor)) continue;
 
         try {
           const artResp = await axios.get(link, {
@@ -230,9 +319,11 @@ async function scrapeSingleCategoryArticle(channel, seenUrls) {
 
           // Extract real author byline if available
           const byline = art$('address, [rel="author"], [data-component="meta-byline"]').first().text().trim() || art$('meta[name="author"]').attr('content');
-          if (byline && author === 'Guardian Columnist') {
+          if (byline && (author === 'Guardian Columnist' || author === 'Letters')) {
             author = byline.replace(/^By\s+/i, '').trim();
           }
+
+          if (BLOCKED_AUTHORS.includes(author.toLowerCase().trim())) continue;
 
           const main = art$('#maincontent, article').first();
           main.find('aside, figure, figcaption, gu-island, form, button, input, iframe, nav, header, footer, svg, style, script, noscript, [data-component="submeta"], [data-component="newsletter-signup"]').remove();
@@ -257,8 +348,9 @@ async function scrapeSingleCategoryArticle(channel, seenUrls) {
             }
           }
 
-          if (paragraphs.length >= 4) {
-            const wordCount = paragraphs.reduce((sum, p) => sum + p.split(/\s+/).length, 0);
+          const totalWords = paragraphs.reduce((sum, p) => sum + p.split(/\s+/).length, 0);
+          if (paragraphs.length >= 4 && totalWords >= 350) {
+            seenUrls.add(link);
             return {
               category: channel.name,
               categoryTag: channel.tag,
@@ -268,8 +360,8 @@ async function scrapeSingleCategoryArticle(channel, seenUrls) {
               url: link,
               pubDate,
               paragraphs,
-              wordCount,
-              estimatedReadingTime: Math.ceil(wordCount / 180)
+              wordCount: totalWords,
+              estimatedReadingTime: Math.ceil(totalWords / 180)
             };
           }
         } catch (err) {
@@ -310,9 +402,11 @@ async function scrapeGuardianOpinionArticles(count = 5, seenUrls = new Set()) {
       for (const itemEl of items) {
         if (articles.length >= count) break;
         const link = $(itemEl).find('link').text().trim();
-        if (!link || localSeen.has(link)) continue;
-
         const rawTitle = $(itemEl).find('title').text().trim();
+        if (!link || localSeen.has(link)) continue;
+        if (BLOCKED_URL_PATTERNS.some(pat => pat.test(link))) continue;
+        if (BLOCKED_TITLE_PATTERNS.some(pat => pat.test(rawTitle))) continue;
+
         let title = rawTitle;
         let author = 'Guardian Columnist';
         if (rawTitle.includes(' | ')) {
@@ -320,6 +414,8 @@ async function scrapeGuardianOpinionArticles(count = 5, seenUrls = new Set()) {
           title = parts[0].trim();
           author = parts[parts.length - 1].trim();
         }
+
+        if (BLOCKED_AUTHORS.includes(author.toLowerCase().trim())) continue;
 
         try {
           const artResp = await axios.get(link, { headers: { 'User-Agent': 'Mozilla/5.0' }, timeout: 10000 });
@@ -338,8 +434,8 @@ async function scrapeGuardianOpinionArticles(count = 5, seenUrls = new Set()) {
             }
           });
 
-          if (paragraphs.length >= 4) {
-            const wordCount = paragraphs.reduce((sum, p) => sum + p.split(/\s+/).length, 0);
+          const totalWords = paragraphs.reduce((sum, p) => sum + p.split(/\s+/).length, 0);
+          if (paragraphs.length >= 4 && totalWords >= 350) {
             localSeen.add(link);
             articles.push({
               id: `art-${articles.length + 1}-${Buffer.from(title).toString('base64').substring(0, 8)}`,
@@ -351,8 +447,8 @@ async function scrapeGuardianOpinionArticles(count = 5, seenUrls = new Set()) {
               url: link,
               pubDate: $(itemEl).find('pubDate').text().trim(),
               paragraphs,
-              wordCount,
-              estimatedReadingTime: Math.ceil(wordCount / 180)
+              wordCount: totalWords,
+              estimatedReadingTime: Math.ceil(totalWords / 180)
             });
           }
         } catch (e) {
